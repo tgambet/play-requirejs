@@ -24,25 +24,12 @@ actually adding complexity instead of making things simpler (unless you have a t
 Installation
 ------------
 
-Add following to your projects `project/plugins.sbt`
-
-	resolvers += [TODO]
-
-	addSbtPlugin("org.github.tgambet" % "play-require" % "0.1")
-
-In dev mode all assets in assets/javascripts will be copied without processing and served directly. When starting or
-staging the application assets will be built using project/build.js.
-
-In addition you'll need to add settings to your project.
-
-	import org.github.tgambet.RequirePlugin
-
-	val main = PlayProject(appName, appVersion, appDependencies, mainLang = SCALA).settings( RequirePlugin.requireSettings:_* )
+...
 
 Issues and TODOs
 --------
 
-* build exceptions are not caught. Also an issue with Play's implementation.
+* build exceptions are not caught
 * lack of configuration options to specify the build file and assets location
 * the plugin does not check that the appDir and dir keys are set correctly in build.js. Ideally those keys would be
 set directly by the plugin.
