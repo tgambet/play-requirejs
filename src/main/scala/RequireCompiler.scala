@@ -1,26 +1,24 @@
 package org.github.tgambet
 
 import java.io._
-import sbt.PlayExceptions.AssetCompilationException
 
 object RequireCompiler {
 
-  // Simply copy resources in the general case. There's probably a better way to do this included in Play.
-  def compile(file: File, opts: Seq[String]): (String, Option[String], Seq[File]) = {
-    try {
-      val source = scala.io.Source.fromFile(file)
-      val lines = source.mkString
-      source.close()
-      (lines, None, Seq.empty)
-    } catch {
-      case e: Exception => {
-        throw AssetCompilationException(Some(file), "Exception: " + e.getMessage, None, None)
-      }
-    }
+  def jsonify(content: String) = {
+    val comments = """(/\*.*?\*/)|(^\s*//.*$)""".r
+    val blanks = """^\s*\n""".r
+    val keys = """(\w+):""".r
+    val parens = """(?s)\A\((.*)\)\z""".r
+
+    var r = content
+    r = comments.replaceAllIn(r, "").trim
+    r = blanks.replaceAllIn(r, "").trim
+    r = keys.replaceAllIn(r, "\"$1\":")
+    r = parens.replaceFirstIn(r, "$1")
+    r
   }
 
-  // The actual require.js compilation happens as a side-effect on start and stage.
-  def compile(buildFile: File) {
+  def compile(buildFile: File): Unit = {
     import org.mozilla.javascript._
     import org.mozilla.javascript.tools.shell._
 

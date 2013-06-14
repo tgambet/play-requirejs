@@ -16,4 +16,4 @@ libraryDependencies ++= Seq(
   "org.scalatest" %% "scalatest" % "1.7.1" % "test"
 )
 
-addSbtPlugin("play" % "sbt-plugin" % "2.1.0")                                        
+addSbtPlugin("play" % "sbt-plugin" % "2.1.0")
