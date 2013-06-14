@@ -5,16 +5,16 @@ import java.io._
 object RequireCompiler {
 
   def jsonify(content: String) = {
-    val comments = """(/\*.*?\*/)|(^\s*//.*$)""".r
-    val blanks = """^\s*\n""".r
-    val keys = """(\w+):""".r
-    val parens = """(?s)\A\((.*)\)\z""".r
+    val comments = """(//.*)|(/\*.*?\*/)""".r
+    val blanks = """(?m)^\s*\n""".r
+    val quoteKeys = """(\w+):""".r
+    val paren = """(?s)\A\((.*)\)\z""".r
 
     var r = content
-    r = comments.replaceAllIn(r, "").trim
-    r = blanks.replaceAllIn(r, "").trim
-    r = keys.replaceAllIn(r, "\"$1\":")
-    r = parens.replaceFirstIn(r, "$1")
+    r = comments.replaceAllIn(r, "")
+    r = blanks.replaceAllIn(r, "")
+    r = quoteKeys.replaceAllIn(r, "\"$1\":")
+    r = paren.replaceFirstIn(r.trim, "$1")
     r
   }
 

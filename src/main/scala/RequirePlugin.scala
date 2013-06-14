@@ -5,41 +5,31 @@ import sbt.Keys._
 import play.Project._
 import util.parsing.json.{JSONObject, JSON}
 
-object RequirePlugin extends Plugin {
+object RequireJSPlugin extends Plugin {
 
-  val requireAssets    = SettingKey[PathFinder]("play-requirejs-assets")
-  val requireOptions   = SettingKey[Seq[String]]("play-requirejs-options")
-  val requireBuildFile = SettingKey[File]("play-requirejs-build-file")
-  val requireDirectory = SettingKey[String]("play-requirejs-directory")
+  object RequireJS {
+    val folder    = SettingKey[String]("play-requirejs-folder")
+    val assets    = SettingKey[PathFinder]("play-requirejs-assets")
+    val options   = SettingKey[Seq[String]]("play-requirejs-options")
+    val output    = SettingKey[File]("play-requirejs-output-directory")
+    val source    = SettingKey[File]("play-requirejs-source-directory")
+    val buildFile = SettingKey[File]("play-requirejs-build-file")
+    val build     = TaskKey[Unit]("play-requirejs-build")
+  }
 
-  val requireWatcher = AssetsCompiler(
-      "require",
-      { file => (file ** "*") filter { _.isFile } },
-      requireAssets,
-      { (name, _) => name },
-      { (file, _) => (IO.read(file), None, Seq.empty) },
-      requireOptions
-  )
+  import RequireJS._
 
-  val require = TaskKey[Unit]("play-requirejs-build", "Build require.js assets")
-
-  val requireTask = (
-    copyResources in Compile,
+  val buildTask = (
+    source,
+    output,
+    buildFile,
     baseDirectory,
-    classDirectory in Compile,
     cacheDirectory,
-    resourceManaged,
-    requireBuildFile,
     streams,
-    requireDirectory) map { (copyResources, base, classes, cache, resources, buildFile, s, directory) =>
-
-    val source = resources / "main" / "public" / directory
-    val target = classes / "public" / directory
+    copyResources in Compile) map { (source, output, buildFile, base, cache, s, _) =>
 
     if (!buildFile.exists) {
-
       s.log.error("Require.js build file not found")
-
     } else {
       val content = IO.read(buildFile)
       val json = JSON.parseRaw(RequireCompiler.jsonify(content))
@@ -49,9 +39,9 @@ object RequirePlugin extends Plugin {
             json.obj + (("mainConfigFile", (source / json.obj("mainConfigFile").asInstanceOf[String]).getAbsolutePath))
           } else json.obj
           JSONObject(obj
-              + (("dir", target.getAbsolutePath))
-              + (("appDir", source.getAbsolutePath))
-              + (("keepBuildDir", true)))
+              + (("dir", output.getAbsolutePath))
+              + (("appDir", source.getAbsolutePath)))
+              //+ (("keepBuildDir", true)))
         }
         case _ => {
           throw new Exception("Error parsing build file: \n" + buildFile)
@@ -65,16 +55,28 @@ object RequirePlugin extends Plugin {
 
   }
 
-  override val settings = Seq(
-    resourceGenerators in Compile <+= requireWatcher,
-    requireDirectory := "javascripts",
-    require <<= requireTask,
-    requireAssets <<= (sourceDirectory in Compile)(_ / "assets" / "javascripts" ** "*"),
-    requireOptions := Seq.empty,
-    javascriptEntryPoints <<=(javascriptEntryPoints, sourceDirectory in Compile, requireDirectory)(
-        (entryPoints, base, requireDir) => (entryPoints --- (base / "assets" / requireDir))
+  private val resourceGenerator = AssetsCompiler(
+    "require",
+    { file => (file ** "*") filter { _.isFile } },
+    assets,
+    { (name, _) => name },
+    { (file, _) => (IO.read(file), None, Seq.empty) },
+    options
+  )
+
+  val baseSettings = Seq (
+    folder := "javascripts",
+    assets <<= (sourceDirectory in Compile, folder)((sources, folder) => sources / "assets" / folder ** "*"),
+    options := Seq.empty,
+    output <<= (classDirectory in Compile, folder)((classes, folder) => classes / "public" / folder),
+    source <<= (resourceManaged in Compile, folder)((resources, folder) => resources / "public" / folder),
+    buildFile <<= baseDirectory(_ / "project" / "build.js"),
+    build <<= buildTask,
+    resourceGenerators in Compile <+= resourceGenerator,
+    javascriptEntryPoints <<= (javascriptEntryPoints, sourceDirectory in Compile, folder)(
+      (entryPoints, base, folder) => (entryPoints --- (base / "assets" / folder ** "*"))
     ),
-    requireBuildFile <<= baseDirectory(_ / "project" / "build.js")
+    (packageBin in Compile) <<= (packageBin in Compile).dependsOn(buildTask)
   )
 
 }
