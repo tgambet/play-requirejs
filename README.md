@@ -8,11 +8,11 @@ Installation
 
 Download the code and run `play publish-local` to publish the jar in play's repository, with `play` on your PATH:
 
-    ~/projects/play-require> play publish-local
+    ~/projects/play-requirejs> play publish-local
 
 Add the plugin to your project. In `project/plugins.sbt`:
 
-    addSbtPlugin("org.github.tgambet" % "play-require" % "0.1")
+    addSbtPlugin("org.github.tgambet" % "play-requirejs" % "0.1")
 
 Configure the plugin. In `project/Build.scala`:
 
