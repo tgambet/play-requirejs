@@ -14,6 +14,7 @@ object RequireJSPlugin extends Plugin {
     val source    = SettingKey[File]("play-requirejs-source-directory")
     val buildFile = SettingKey[File]("play-requirejs-build-file")
     val build     = TaskKey[Unit]("play-requirejs-build")
+    val baseSettings = baseRequireJSSettings
   }
 
   import RequireJS._
@@ -41,7 +42,7 @@ object RequireJSPlugin extends Plugin {
     }
   }
 
-  private val requirejsResourceGenerator = AssetsCompiler(
+  val requireJSResourceGenerator = AssetsCompiler(
     "require",
     { file => (file ** "*") filter { _.isFile } },
     assets,
@@ -50,7 +51,7 @@ object RequireJSPlugin extends Plugin {
     options
   )
 
-  val baseSettings = Seq (
+  val baseRequireJSSettings = Seq (
     folder := "javascripts",
     assets <<= (sourceDirectory in Compile, folder)((sources, folder) => sources / "assets" / folder ** "*"),
     options := Seq.empty,
@@ -58,11 +59,13 @@ object RequireJSPlugin extends Plugin {
     source <<= (resourceManaged in Compile, folder)((resources, folder) => resources / "public" / folder),
     buildFile <<= baseDirectory(_ / "project" / "build.js"),
     build <<= buildTask,
-    resourceGenerators in Compile <+= requirejsResourceGenerator,
+    resourceGenerators in Compile <+= requireJSResourceGenerator,
     javascriptEntryPoints <<= (javascriptEntryPoints, sourceDirectory in Compile, folder)(
       (entryPoints, base, folder) => (entryPoints --- (base / "assets" / folder ** "*"))
     ),
     (packageBin in Compile) <<= (packageBin in Compile).dependsOn(buildTask)
   )
+
+
 
 }

@@ -1,4 +1,4 @@
-name := "play-require"
+name := "play-requirejs"
 
 version := "0.1"
 
