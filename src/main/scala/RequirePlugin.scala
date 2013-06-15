@@ -3,7 +3,6 @@ package org.github.tgambet
 import sbt._
 import sbt.Keys._
 import play.Project._
-import util.parsing.json.{JSONObject, JSON}
 
 object RequireJSPlugin extends Plugin {
 
@@ -29,33 +28,20 @@ object RequireJSPlugin extends Plugin {
     copyResources in Compile) map { (source, output, buildFile, base, cache, s, _) =>
 
     if (!buildFile.exists) {
-      s.log.error("Require.js build file not found")
+      s.log.error("Require.js build file not found, expected: " + buildFile)
     } else {
-      val content = IO.read(buildFile)
-      val json = JSON.parseRaw(RequireCompiler.jsonify(content))
-      val newJson: JSONObject = json match {
-        case Some(json: JSONObject) => {
-          val obj = if (json.obj.isDefinedAt("mainConfigFile")) {
-            json.obj + (("mainConfigFile", (source / json.obj("mainConfigFile").asInstanceOf[String]).getAbsolutePath))
-          } else json.obj
-          JSONObject(obj
-              + (("dir", output.getAbsolutePath))
-              + (("appDir", source.getAbsolutePath)))
-              //+ (("keepBuildDir", true)))
-        }
-        case _ => {
-          throw new Exception("Error parsing build file: \n" + buildFile)
-        }
-      }
-
+      val build = RequireCompiler.generateBuildConfig(
+        buildFile = buildFile.getAbsoluteFile,
+        sourceDir = source.getAbsoluteFile,
+        outputDir = output.getAbsoluteFile
+      )
       val cached = cache / "build.js"
-      IO.write(cached, newJson.toString())
+      IO.write(cached, build.toString())
       RequireCompiler.compile(cached)
     }
-
   }
 
-  private val resourceGenerator = AssetsCompiler(
+  private val requirejsResourceGenerator = AssetsCompiler(
     "require",
     { file => (file ** "*") filter { _.isFile } },
     assets,
@@ -72,7 +58,7 @@ object RequireJSPlugin extends Plugin {
     source <<= (resourceManaged in Compile, folder)((resources, folder) => resources / "public" / folder),
     buildFile <<= baseDirectory(_ / "project" / "build.js"),
     build <<= buildTask,
-    resourceGenerators in Compile <+= resourceGenerator,
+    resourceGenerators in Compile <+= requirejsResourceGenerator,
     javascriptEntryPoints <<= (javascriptEntryPoints, sourceDirectory in Compile, folder)(
       (entryPoints, base, folder) => (entryPoints --- (base / "assets" / folder ** "*"))
     ),

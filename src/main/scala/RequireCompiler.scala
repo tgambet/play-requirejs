@@ -1,6 +1,9 @@
 package org.github.tgambet
 
-import java.io._
+import sbt._
+import util.parsing.json.{JSONObject, JSON}
+import org.mozilla.javascript._
+import org.mozilla.javascript.tools.shell._
 
 object RequireCompiler {
 
@@ -18,29 +21,39 @@ object RequireCompiler {
     r
   }
 
-  def compile(buildFile: File): Unit = {
-    import org.mozilla.javascript._
-    import org.mozilla.javascript.tools.shell._
+  def generateBuildConfig(buildFile: File, sourceDir: File, outputDir: File): JSONObject = {
+    val content = IO.read(buildFile)
+    val json = JSON.parseRaw(jsonify(content))
+    if (!json.isDefined)
+      throw new Exception("Error parsing requirejs build file: \n" + buildFile)
+    json.get match {
+      case json: JSONObject => {
+        val obj = if (json.obj.isDefinedAt("mainConfigFile")) {
+          val configFile = json.obj("mainConfigFile").asInstanceOf[String]
+          json.obj + (("mainConfigFile", (sourceDir / configFile).getAbsolutePath))
+        } else json.obj
+        JSONObject(obj
+            + (("dir", outputDir.getAbsolutePath))
+            + (("appDir", sourceDir.getAbsolutePath)))
+      }
+      case _ => {
+        throw new Exception("Not a valid requirejs build file: \n" + buildFile)
+      }
+    }
+  }
 
-    val ctx = {
-      val c = Context.enter
-      c.setOptimizationLevel(-1)
-      c
-    }
-    val scope = {
-      val global = new Global
-      global.init(ctx)
-      ctx.initStandardObjects(global)
-    }
-    try {
-      val args = ctx.newArray(scope, Array[Object]("-o", buildFile.getAbsolutePath))
-      scope.put("arguments", scope, args)
-      val ir = new java.io.InputStreamReader(this.getClass.getClassLoader.getResource("r.js").openConnection().getInputStream())
-      ctx.evaluateReader(scope, ir, "r.js", 1, null)
-    } catch { case e: Exception =>
-      throw e
-    } finally {
-      Context.exit()
-    }
+  def compile(buildFile: File): Unit = {
+    ContextFactory.getGlobal.call(new ContextAction {
+      def run(ctx: Context) = {
+        val scope: Scriptable = {
+          val global = new Global
+          global.init(ctx)
+          ctx.initStandardObjects(global)
+        }
+        val args = ctx.newArray(scope, Array[Object]("-o", buildFile.getAbsolutePath))
+        scope.put("arguments", scope, args)
+        val stream = new java.io.InputStreamReader(this.getClass.getClassLoader.getResource("r.js").openConnection().getInputStream())
+        ctx.evaluateReader(scope, stream, "r.js", 1, null)
+    }})
   }
 }
