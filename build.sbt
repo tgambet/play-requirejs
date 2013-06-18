@@ -13,7 +13,8 @@ description := "SBT plugin for using require.js in Play 2.1"
 resolvers += "Typesafe repository" at "http://repo.typesafe.com/typesafe/releases/"
 
 libraryDependencies ++= Seq(
-  "org.scalatest" %% "scalatest" % "1.7.1" % "test"
+  "org.scalatest" %% "scalatest" % "1.7.1" % "test",
+  "org.json4s" %% "json4s-native" % "3.2.4"
 )
 
 //addSbtPlugin("play" % "sbt-plugin" % "2.2-SNAPSHOT")

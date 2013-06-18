@@ -20,25 +20,28 @@ object RequireJSPlugin extends Plugin {
   import RequireJS._
 
   val buildTask = (
+    folder,
+    resourceManaged in Compile,
+    classDirectory in Compile,
     source,
     output,
     buildFile,
     baseDirectory,
     cacheDirectory,
     streams,
-    copyResources in Compile) map { (source, output, buildFile, base, cache, s, _) =>
+    copyResources in Compile) map { (folder, rm, classes, source, output, buildFile, base, cache, s, cp) =>
+
+    //cp
 
     if (!buildFile.exists) {
       s.log.error("Require.js build file not found, expected: " + buildFile)
     } else {
-      val build = RequireCompiler.generateBuildConfig(
-        buildFile = buildFile.getAbsoluteFile,
-        sourceDir = source.getAbsoluteFile,
-        outputDir = output.getAbsoluteFile
+      RequireCompiler.compile(
+        sourceBuild = buildFile,
+        targetBuild = rm / "public" / "build.js",
+        sourceDir = rm / "public" / folder,
+        targetDir = classes / "public" / folder
       )
-      val cached = cache / "build.js"
-      IO.write(cached, build.toString())
-      RequireCompiler.compile(cached)
     }
   }
 
@@ -52,7 +55,7 @@ object RequireJSPlugin extends Plugin {
   )
 
   val baseRequireJSSettings = Seq (
-    folder := "javascripts",
+    folder := "javascripts-require",
     assets <<= (sourceDirectory in Compile, folder)((sources, folder) => sources / "assets" / folder ** "*"),
     options := Seq.empty,
     output <<= (classDirectory in Compile, folder)((classes, folder) => classes / "public" / folder),
@@ -61,7 +64,7 @@ object RequireJSPlugin extends Plugin {
     build <<= buildTask,
     resourceGenerators in Compile <+= requireJSResourceGenerator,
     javascriptEntryPoints <<= (javascriptEntryPoints, sourceDirectory in Compile, folder)(
-      (entryPoints, base, folder) => (entryPoints --- (base / "assets" / folder ** "*"))
+      (entryPoints, sources, folder) => (entryPoints --- (sources / "assets" / folder ** "*"))
     ),
     (packageBin in Compile) <<= (packageBin in Compile).dependsOn(buildTask)
   )

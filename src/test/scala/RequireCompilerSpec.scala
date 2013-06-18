@@ -2,35 +2,61 @@ package org.github.tgambet
 
 import org.scalatest.FunSpec
 import java.io.File
-import util.parsing.json._
-import sbt.IO
-import util.matching.Regex
+import sbt._
+import org.json4s._
+import org.json4s.JsonDSL._
+import org.json4s.JsonAST.{JField, JObject}
 
 class RequireCompilerSpec extends FunSpec {
+
+  val target = new File("target/tests")
+  val resources = new File("src/test/resources/")
+  val sources = resources / "js"
+  val build1 = resources / "build-1.js"
+  val build2 = resources / "build-2.js"
+  val build3 = resources / "build-3.json"
+  val buildFiles = Seq(
+    build1,
+    build2,
+    build3
+  )
+
   describe("RequireCompiler") {
-    it("should parse a require.js build file as a json object") {
-      val content = IO.read(new File("src/test/resources/build.js"))
-      val expected = """{
-        |    "appDir": "./js",
-        |    "baseUrl": "./",
-        |    "dir": "../../../target/test/js/",
-        |    "optimize": "uglify",
-        |    "modules": [{ "name": "test" }]
-        |}""".stripMargin
-      val jsonString = RequireCompiler.jsonify(content)
-      assert(jsonString === expected)
 
-      val json = JSON.parseRaw(jsonString).get
-      assert(json.asInstanceOf[JSONObject].obj("optimize") === "uglify")
+    it("should parse common require.js build files to json") {
+
+      val builds: Map[File, JObject] = (buildFiles map (a => (a, RequireCompiler.loadBuild(a)))).toMap
+
+      assert(builds(build1) ===
+        ("baseUrl" -> ".") ~
+        ("modules" -> List(("name" -> "test")))
+      )
+
+      builds foreach { case (build, json) =>
+        assert(json.obj.find{
+          case JField("modules", _) => true
+          case _ => false
+        }.isDefined)
+      }
+
     }
 
-    it("should compile javascripts assets using r.js compiler on the classpath and a given build file") {
-      new File("target/test/js/test.js").delete()
-      val buildFile = new File("src/test/resources/build.js")
-      RequireCompiler.compile(buildFile)
-      val compiled = IO.read(new File("target/test/js/test.js"))
-      assert(compiled === """var a=[];define("test",[],function(){})""")
+
+    it("should compile") {
+
+      IO.delete(target)
+
+      val builds = buildFiles map { build =>
+        RequireCompiler.compile(
+          sourceDir = sources,
+          targetDir = target / (build.getName + "-out"),
+          sourceBuild = build,
+          targetBuild = target / build.getName
+        )
+      }
+
     }
+
   }
 }
 

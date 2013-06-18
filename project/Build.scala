@@ -3,8 +3,8 @@ import sbt.Keys._
 
 object PluginBuild extends Build {
 
-  lazy val playRequire = Project(
-    id = "play-require", base = file(".")
+  lazy val playRequirejs = Project(
+    id = "play-requirejs", base = file(".")
   )
 
 }
