@@ -4,7 +4,7 @@ import sbt._
 import sbt.Keys._
 import play.Project._
 
-object RequireJSPlugin extends Plugin {
+object RequirePlugin extends Plugin {
 
   object RequireJS {
     val folder    = SettingKey[String]("play-requirejs-folder")
@@ -14,12 +14,12 @@ object RequireJSPlugin extends Plugin {
     val source    = SettingKey[File]("play-requirejs-source-directory")
     val buildFile = SettingKey[File]("play-requirejs-build-file")
     val build     = TaskKey[Unit]("play-requirejs-build")
-    val baseSettings = baseRequireJSSettings
+    lazy val baseSettings = requireBaseSettings
   }
 
   import RequireJS._
 
-  val buildTask = (
+  val requireBuildTask = (
     folder,
     resourceManaged in Compile,
     classDirectory in Compile,
@@ -45,7 +45,7 @@ object RequireJSPlugin extends Plugin {
     }
   }
 
-  val requireJSResourceGenerator = AssetsCompiler(
+  val requireResourceGenerator = AssetsCompiler(
     "require",
     { file => (file ** "*") filter { _.isFile } },
     assets,
@@ -54,19 +54,19 @@ object RequireJSPlugin extends Plugin {
     options
   )
 
-  val baseRequireJSSettings = Seq (
+  lazy val requireBaseSettings = Seq (
+    options := Seq.empty,
     folder := "javascripts-require",
     assets <<= (sourceDirectory in Compile, folder)((sources, folder) => sources / "assets" / folder ** "*"),
-    options := Seq.empty,
-    output <<= (classDirectory in Compile, folder)((classes, folder) => classes / "public" / folder),
     source <<= (resourceManaged in Compile, folder)((resources, folder) => resources / "public" / folder),
+    output <<= (classDirectory  in Compile, folder)((classes, folder) => classes / "public" / folder),
     buildFile <<= baseDirectory(_ / "project" / "build.js"),
-    build <<= buildTask,
-    resourceGenerators in Compile <+= requireJSResourceGenerator,
+    build <<= requireBuildTask,
+    resourceGenerators in Compile <+= requireResourceGenerator,
     javascriptEntryPoints <<= (javascriptEntryPoints, sourceDirectory in Compile, folder)(
       (entryPoints, sources, folder) => (entryPoints --- (sources / "assets" / folder ** "*"))
     ),
-    (packageBin in Compile) <<= (packageBin in Compile).dependsOn(buildTask)
+    (packageBin in Compile) <<= (packageBin in Compile).dependsOn(requireBuildTask)
   )
 
 
