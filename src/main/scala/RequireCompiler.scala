@@ -6,26 +6,22 @@ import org.json4s.JsonDSL._
 import org.json4s.native.JsonMethods._
 import org.mozilla.javascript._
 import org.mozilla.javascript.tools.shell._
+import util.matching.Regex
 
 object RequireCompiler {
 
   def jsonify(content: String) = {
+    val replacements: Seq[(Regex, String)] = Seq(
+      ("""(//.*)|(/\*.*?\*/)""".r -> ""), // remove comments
+      ("""(?m)^\s*\n""".r -> ""),         // remove empty lines
+      ("""'""".r -> "\""),                // single to double quotes
+      ("""(\w+):""".r -> "\"$1\":"),      // quote object keys
+      ("""(?s)\A\((.*)\)\z""".r -> "$1")  // remove wrapping parenthesis
+    )
 
-    // TODO Seq + fold
-
-    val comments = """(//.*)|(/\*.*?\*/)""".r
-    val blanks = """(?m)^\s*\n""".r
-    val singleQuotes = """'""".r
-    val unquotedKeys = """(\w+):""".r
-    val extParenthesis = """(?s)\A\((.*)\)\z""".r
-
-    var r = content
-    r = comments.replaceAllIn(r, "")
-    r = blanks.replaceAllIn(r, "")
-    r = singleQuotes.replaceAllIn(r, "\"")
-    r = unquotedKeys.replaceAllIn(r, "\"$1\":")
-    r = extParenthesis.replaceFirstIn(r.trim, "$1")
-    r
+    replacements.foldLeft(content){ case (content, (regex, replace)) =>
+      regex.replaceAllIn(content.trim, replace)
+    }
   }
 
   def loadBuild(build: File): JObject = {
