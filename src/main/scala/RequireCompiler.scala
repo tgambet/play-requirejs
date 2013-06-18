@@ -25,27 +25,26 @@ object RequireCompiler {
   }
 
   def loadBuild(build: File): JObject = {
-    try {
-      parse(jsonify(IO.read(build))).asInstanceOf[JObject]
-    } catch {
-      case cause: Exception => throw new Exception("Error loading requirejs build file: " + build, cause)
+    val content = IO.read(build)
+    val json = build.getName match {
+      case name if name.endsWith(".js") => parse(jsonify(content))
+      case name if name.endsWith(".json") => parse(content)
+      case _ => throw new IllegalArgumentException("Requirejs build file must be a .js or .json file: " + build)
+    }
+    json match {
+      case j: JObject => j
+      case _ => throw new IllegalArgumentException("Invalid requirejs build file: " + build)
     }
   }
 
   def createBuildFile(sourceDir: File, targetDir: File, sourceBuild: File, targetBuild: File = new File("build_managed.js")): File = {
-
     val sourceJson = loadBuild(sourceBuild)
-
     val dir = targetBuild.toPath.getParent.relativize(targetDir.toPath).toString
     val appDir = targetBuild.toPath.getParent.relativize(sourceDir.toPath).toString
-
     val defaults = ("optimize" -> "none") ~ ("baseUrl" -> ".")
     val overrides = ("dir" -> dir) ~ ("appDir" -> appDir)
-
     val targetJson = overrides merge sourceJson merge defaults
-
     IO.write(targetBuild, pretty(render(targetJson)))
-
     targetBuild
   }
 
