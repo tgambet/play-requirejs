@@ -1,5 +1,0 @@
-{
-    "baseUrl": ".",
-    "modules": [{ "name": "test" }]
-}
-

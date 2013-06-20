@@ -43,10 +43,11 @@ var requirejs, require, define;
         }
 
         //Set up execution context.
-        rhinoContext = Packages.org.mozilla.javascript.ContextFactory.getGlobal().enterContext();
+        //rhinoContext = Packages.org.mozilla.javascript.ContextFactory.getGlobal().enterContext();
 
         exec = function (string, name) {
-            return rhinoContext.evaluateString(this, string, name, 0, null);
+            //return rhinoContext.evaluateString(this, string, name, 0, null);
+            return engine.eval(string);
         };
 
         exists = function (fileName) {
@@ -2802,10 +2803,10 @@ define('rhino/file', function () {
          * @param {java.io.File||String} file
          */
         absPath: function (fileObj) {
-            if (typeof fileObj === "string") {
+            /*if (typeof fileObj === "string") {
                 fileObj = new java.io.File(fileObj);
-            }
-            return (fileObj.getCanonicalPath() + "").replace(file.backSlashRegExp, "/");
+            }*/
+            return (new java.io.File(fileObj).getCanonicalPath() + "").replace(file.backSlashRegExp, "/");
         },
 
         getFilteredFileList: function (/*String*/startDir, /*RegExp*/regExpFilters, /*boolean?*/makeUnixPaths, /*boolean?*/startDirIsJavaObject) {
@@ -15491,7 +15492,7 @@ function (lang,   logger,   file,          parse,    optimize,   pragma,
         return;
     }
 
-    if (commandOption === 'o') {
+    if (commandOption == 'o') {
         //Do the optimizer work.
         loadLib();
 

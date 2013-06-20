@@ -1,3 +1,4 @@
+
 package org.github.tgambet
 
 import org.scalatest.FunSpec
@@ -5,57 +6,93 @@ import java.io.File
 import sbt._
 import org.json4s._
 import org.json4s.JsonDSL._
+import org.json4s.native.JsonMethods._
 import org.json4s.JsonAST.{JField, JObject}
+import sbt.Keys._
 
 class RequireCompilerSpec extends FunSpec {
 
-  val target = new File("target/tests")
-  val resources = new File("src/test/resources/")
-  val sources = resources / "js"
-  val build1 = resources / "build-1.js"
-  val build2 = resources / "build-2.js"
-  val build3 = resources / "build-3.json"
-  val buildFiles = Seq(
-    build1,
-    build2,
-    build3
-  )
+
 
   describe("RequireCompiler") {
 
-    it("should parse common require.js build files to json") {
+    /*it("should load require.js build files written in js or json syntax") {
 
-      val builds: Map[File, JObject] = (buildFiles map (a => (a, RequireCompiler.loadBuild(a)))).toMap
+      import RequireCompiler.load
 
-      assert(builds(build1) ===
-        ("baseUrl" -> ".") ~
-        ("modules" -> List(("name" -> "test")))
-      )
+      val target = new File("target/tests")
+      val resources = new File("src/test/resources/")
+      val assets = resources / "js"
 
-      builds foreach { case (build, json) =>
-        assert(json.obj.find{
-          case JField("modules", _) => true
+      val buildJs   = resources / "builds" / "build.js"
+      val buildJson = resources / "builds" / "build.json"
+
+      assert(load(buildJs) === load(buildJson))
+
+      assert {
+        load(buildJs).get("modules") match {
+          case Some(obj: List[_]) => obj.size == 2
           case _ => false
-        }.isDefined)
+        }
+      }
+
+    }*/
+
+    it ("should compile a project given a build.json file and produce a map of dependencies") {
+
+      //import RequireCompiler.load
+
+      val target = new File("target/tests")
+      val resources = new File("src/test/resources/")
+      val assets = resources / "js"
+
+      val useCase = "use_case_2"
+
+      //val build = load(resources / useCase / "build.json")
+      val srcDir = resources / useCase
+      val targetDir = target / useCase
+
+      IO.delete(targetDir)
+      IO.copyDirectory(srcDir, targetDir)
+      //IO.copyFile(targetDir / "build.json", targetDir / "build.js")
+      assert{
+        RequireCompiler.compile(targetDir / "build.js").all.toList === List(
+          ("app/app.js" -> "front.js"),
+          ("app/app.js" -> "back.js"),
+          ("back.js" -> "back.js"),
+          ("lib/jquery.js" -> "back.js"),
+          ("front.js" -> "front.js"),
+          ("app/admin.js" -> "back.js"),
+          ("lib/backbone.js" -> "front.js")
+        ).map{case (a, b) => (new File(a), new File(b))}
+
       }
 
     }
 
 
-    it("should compile") {
+/*    it("should compile") {
 
-      IO.delete(target)
+      //IO.delete(target)
 
-      val builds = buildFiles map { build =>
+      //val builds = buildFiles map { build =>
+
+      val newb: JObject = ("dir" -> "target/tests/") ~
+        ("appDir" -> "src/test/resources/js") ~
+        ("baseUrl" -> ".") ~
+        ("modules" -> List(("name" -> "test")))
+
+      val build = build1
+
         RequireCompiler.compile(
           sourceDir = sources,
           targetDir = target / (build.getName + "-out"),
           sourceBuild = build,
           targetBuild = target / build.getName
         )
-      }
+      //}
 
-    }
+    }*/
 
   }
 }
