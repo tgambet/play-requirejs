@@ -10,6 +10,8 @@ import util.matching.Regex
 import java.nio.file.{Path, Paths}
 import javax.script._
 import java.io.PrintWriter
+import java.util.Date
+import java.text.SimpleDateFormat
 
 object RequireCompiler {
 
@@ -27,10 +29,10 @@ object RequireCompiler {
     }
   }
 
-  def load(build: File): Map[String, _] = {
+  def load(build: File): JObject = {
     try {
       val content = IO.read(build)
-      parse(if (build.getName.endsWith(".js")) {jsonify(content)} else {content}).asInstanceOf[JObject].values
+      parse(if (build.getName.endsWith(".js")) {jsonify(content)} else {content}).asInstanceOf[JObject]
     } catch {
       case e: Exception => throw new Exception("Error loading buildFile: " + build, e)
     }
@@ -68,7 +70,7 @@ object RequireCompiler {
     val appDir = new File((config \ "appDir").asInstanceOf[JString])
   }*/
 
-/*  def createBuildFile(sourceDir: File, targetDir: File, sourceBuild: File, targetBuild: File = new File("build_managed.js")): File = {
+  /*  def createBuildFile(sourceDir: File, targetDir: File, sourceBuild: File, targetBuild: File = new File("build_managed.js")): File = {
     val sourceJson = load(sourceBuild)
     val dir = targetBuild.toPath.getParent.relativize(targetDir.toPath).toString
     val appDir = targetBuild.toPath.getParent.relativize(sourceDir.toPath).toString
@@ -79,7 +81,7 @@ object RequireCompiler {
     targetBuild
   }*/
 
-/*  def compile(sourceDir: File, targetDir: File, sourceBuild: File, targetBuild: File = new File("build_managed.js")): Relation[File, File] = {
+  /*  def compile(sourceDir: File, targetDir: File, sourceBuild: File, targetBuild: File = new File("build_managed.js")): Relation[File, File] = {
     compile(createBuildFile(sourceDir, targetDir, sourceBuild, targetBuild))
     val buildTxt = targetDir / "build.txt"
     val content = IO.read(buildTxt)
@@ -103,9 +105,29 @@ object RequireCompiler {
     Relation.empty[File, File] ++ moduleDependencies
   }
 
+  def compile(buildFile: File, modules: List[String]): Relation[File, File] = {
+    val build = load(buildFile)
+    val newBuild = build.transformField {
+      case ("modules", base: JArray) => {
+        val filtered = base.filter {
+          case p: JObject =>  modules.contains(p.values("name").asInstanceOf[String])
+          case _ => false
+        }
+        ("modules", filtered)
+      }
+    }
+    val date = new SimpleDateFormat("MMMM.dd.HHmmss").format(new Date())
+    val newBuildFile = buildFile.getParentFile / ("build." + date + ".js")
+    IO.write(newBuildFile, pretty(render(newBuild)))
+    compile(newBuildFile)
+  }
+
   def compile(buildFile: File): Relation[File, File] = {
 
-    val build = load(buildFile)
+    println("Compiling: " + buildFile)
+
+
+    val build = load(buildFile).values
     val outputDir: Path = {
       build get("out") map { case out: String =>
         val path = Paths.get(out)
@@ -120,6 +142,12 @@ object RequireCompiler {
       throw new Exception(""" "dir" or "out" options not specified""")
     }
 
+    /*if (track) {
+      val cacheFile = buildFile.getParentFile / "build.cache"
+      val assets = (resources / "js" ** "*")
+      val currentInfos: Map[File, ModifiedFileInfo] = assets.get.map(f => f.getAbsoluteFile -> FileInfo.lastModified(f)).toMap
+    }*/
+
     val mgr: ScriptEngineManager = new ScriptEngineManager()
     val engine: ScriptEngine = mgr.getEngineByName("JavaScript")
     augmentEngine(engine)
@@ -131,8 +159,10 @@ object RequireCompiler {
     engine.eval(stream)
 
     val report = buildFile.toPath.getParent.resolve(outputDir).resolve("build.txt").toFile
-    parseBuildReport(report)
-    //Relation.empty[File, File]
+    report.exists() match {
+      case true => parseBuildReport(report)
+      case _ => Relation.empty[File, File]
+    }
   }
 
   /*private def call(buildFile: File) = {
@@ -163,6 +193,7 @@ object RequireCompiler {
 
   def augmentEngine(engine: ScriptEngine) = {
     engine.getBindings(ScriptContext.GLOBAL_SCOPE).put("utils", new Utils(engine))
+    // TODO implement a js Logger
     engine.eval(
       """
         |for(var fn in utils) {
@@ -175,10 +206,6 @@ object RequireCompiler {
         |    })();
         |  }
         |}
-        |//String.prototype.getCanonicalPath = function () { utils.getCanonicalPath(this); }
-        |
-        |
-        |
       """.stripMargin
     )
   }
