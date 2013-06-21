@@ -12,6 +12,8 @@ import javax.script._
 import java.io.PrintWriter
 import java.util.Date
 import java.text.SimpleDateFormat
+import com.google.javascript.jscomp.{CheckLevel, JSSourceFile}
+import com.google.javascript.jscomp.{Compiler, LoggerErrorManager, CheckLevel, JSError}
 
 object RequireCompiler {
 
@@ -94,18 +96,108 @@ object RequireCompiler {
     Relation.empty[File, File] ++ moduleDependencies
   }*/
 
-  def parseBuildReport(report: File): Relation[File, File] = {
+  def parseBuildReport(report: File): Relation[Path, Path] = {
     val content = IO.read(report)
-    val moduleDependencies: Seq[(File, File)] = content.split("""\n\n""").map{case a =>
+    val moduleDependencies = content.split("""\n\n""").map{case a =>
       val arr = a.split("\n----------------\n")
-      val module = new File(arr(0).trim)
-      val deps = arr(1).split("""\n""") map (s => new File(s.trim))
+      val module = Paths.get(arr(0).trim)
+      val deps = arr(1).split("""\n""") map (s => Paths.get(s.trim))
       deps map ((_, module))
     }.flatten.toSeq
-    Relation.empty[File, File] ++ moduleDependencies
+    Relation.empty[Path, Path] ++ moduleDependencies
   }
 
-  def compile(buildFile: File, modules: List[String]): Relation[File, File] = {
+  def getSourceDirectory(buildFile: File): File = {
+    load(buildFile) \ "appDir" match {
+      case JString(appDir) => buildFile.toPath.getParent.resolve(appDir).toFile
+      case _ => buildFile.toPath.getParent.toFile
+    }
+  }
+
+  def getOutputDirectory(buildFile: File): File = {
+    val build = load(buildFile).values
+    val outputDir = build get("out") map { case out: String =>
+      val path = Paths.get(out)
+      if (path.getParent != null) path.getParent else Paths.get("")
+    } orElse {
+      build get("dir") map { case dir: String =>
+        Paths.get(dir)
+      }
+    } getOrElse {
+      throw new Exception(""" "dir" or "out" options not specified""")
+      // XXX: exception or Path("") ?
+    }
+    buildFile.toPath.getParent.resolve(outputDir).toFile
+  }
+
+  def recompile(buildFile: File, cacheFile: File): Relation[File, File] = {
+
+    // find sourceDirectory
+    val sources = getSourceDirectory(buildFile)
+    println("sources: " + sources)
+    println("sources: " + sources.toPath.toAbsolutePath)
+
+    val output = getOutputDirectory(buildFile)
+    println("output: " + output)
+
+    // get Last Modified info
+    val assets = (sources ** "*") --- (output ** "*") filter (_.isFile) // TODO remove assets in built Dir, remove directories
+    val currentInfos: Map[File, ModifiedFileInfo] = assets.get.map(f => f.getAbsoluteFile -> FileInfo.lastModified(f)).toMap
+
+    //println(assets.get)
+    //println(cacheFile)
+    println("currentInfos:" + currentInfos.mkString("\n"))
+
+    // read cache to find modified files
+    val (previousRelation, previousInfo) = Sync.readInfo(cacheFile)(FileInfo.lastModified.format)
+
+    //println("previousRelation: " + previousRelation)
+    println("previousInfo: " + previousInfo.mkString("\n"))
+
+    lazy val changedFiles: Seq[File] =
+      currentInfos.filter(e => !previousInfo.get(e._1).isDefined || previousInfo(e._1).lastModified < e._2.lastModified).map(_._1).toSeq ++
+      previousInfo.filter(e => !currentInfos.get(e._1).isDefined).map(_._1).toSeq
+
+    println("changedFiles: " + changedFiles)
+
+    // find modules dependent on modified files
+    val modulesFiles = previousRelation.filter {
+      case (source, module) => {
+        changedFiles.contains(sources.toPath.resolve(source.toPath).toFile)
+      }
+    }
+    println("modulesFiles: " + modulesFiles)
+
+    val modules = modulesFiles._2s.map(f => output.relativize(f).get.toString.replaceAll("""\.js$""", ""))
+    println("modules: " + modules)
+    /*if (changedFiles.contains(sourceFile) || dependencies.contains(new File(resourcesManaged, "public/" + name))) {
+      val (compiled, dependencies) = try {
+        compile(sourceFile)
+      } catch {
+        case e: AssetCompilationException => throw new Exception("")//PlaySourceGenerators.reportCompilationError(state, e)
+      }
+      //val out = new File(resourcesManaged, "public/" + name)
+      (dependencies ++ Seq(sourceFile)).toSet[File].map(_ -> compiled)
+    } else {
+      previousRelation.filter((original, compiled) => original == sourceFile)._2s.map(sourceFile -> _)
+    }*/
+
+    // rebuild modules with keepBuildDir = true
+    val newRels = if (modules.isEmpty) {
+      compile(buildFile)
+    } else {
+      compile(buildFile, modules.toList)
+    }
+
+
+    println("newRels: " + newRels)
+
+    // update cache with new relations and info
+
+    Sync.writeInfo(cacheFile, newRels, currentInfos)(FileInfo.lastModified.format)
+
+    /*val modules: List[String] = List.empty
+
     val build = load(buildFile)
     val newBuild = build.transformField {
       case ("modules", base: JArray) => {
@@ -119,6 +211,27 @@ object RequireCompiler {
     val date = new SimpleDateFormat("MMMM.dd.HHmmss").format(new Date())
     val newBuildFile = buildFile.getParentFile / ("build." + date + ".js")
     IO.write(newBuildFile, pretty(render(newBuild)))
+    compile(newBuildFile)*/
+
+    Relation.empty[File, File]
+    newRels
+  }
+
+  def compile(buildFile: File, modules: List[String]): Relation[File, File] = {
+    val build = load(buildFile)
+    val newBuild = build.transformField {
+      case ("modules", base: JArray) => {
+        val filtered = base.filter {
+          case p: JObject =>  modules.contains(p.values("name").asInstanceOf[String])
+          case _ => false
+        }
+        ("modules", filtered)
+      }
+    }
+    println("newBuild: " + newBuild)
+    val date = new SimpleDateFormat("MMMM.dd.HHmmss").format(new Date())
+    val newBuildFile = buildFile.getParentFile / ("build." + date + ".js")
+    IO.write(newBuildFile, pretty(render(newBuild)))
     compile(newBuildFile)
   }
 
@@ -126,27 +239,9 @@ object RequireCompiler {
 
     println("Compiling: " + buildFile)
 
-
     val build = load(buildFile).values
-    val outputDir: Path = {
-      build get("out") map { case out: String =>
-        val path = Paths.get(out)
-        if (path.getParent != null) path.getParent
-        else Paths.get("")
-      }
-    } orElse {
-      build get("dir") map { case dir: String =>
-        Paths.get(dir)
-      }
-    } getOrElse {
-      throw new Exception(""" "dir" or "out" options not specified""")
-    }
-
-    /*if (track) {
-      val cacheFile = buildFile.getParentFile / "build.cache"
-      val assets = (resources / "js" ** "*")
-      val currentInfos: Map[File, ModifiedFileInfo] = assets.get.map(f => f.getAbsoluteFile -> FileInfo.lastModified(f)).toMap
-    }*/
+    val outputDir = getOutputDirectory(buildFile)
+    val sources = getSourceDirectory(buildFile)
 
     val mgr: ScriptEngineManager = new ScriptEngineManager()
     val engine: ScriptEngine = mgr.getEngineByName("JavaScript")
@@ -158,9 +253,11 @@ object RequireCompiler {
     engine.getContext.setWriter(new RequirePrintWriter)
     engine.eval(stream)
 
-    val report = buildFile.toPath.getParent.resolve(outputDir).resolve("build.txt").toFile
+    val report = outputDir.toPath.resolve("build.txt").toFile
     report.exists() match {
-      case true => parseBuildReport(report)
+      case true => Relation.empty[File, File] ++ parseBuildReport(report).all.map{
+        case (a, b) => (sources.toPath.resolve(a).toFile, outputDir.toPath.resolve(b).toFile)
+      }
       case _ => Relation.empty[File, File]
     }
   }
@@ -192,6 +289,15 @@ object RequireCompiler {
   }
 
   def augmentEngine(engine: ScriptEngine) = {
+
+
+    import com.google.javascript.jscomp.Compiler
+    import com.google.javascript.jscomp.ErrorManager
+
+    //com.google.javascript.jscomp.
+
+
+
     engine.getBindings(ScriptContext.GLOBAL_SCOPE).put("utils", new Utils(engine))
     // TODO implement a js Logger
     engine.eval(
@@ -217,6 +323,7 @@ object RequireCompiler {
     def load(file: String) = {
       engine.eval(readFile(file))
     }
+    def quit(i: Int) {}
   }
 
 }

@@ -20,9 +20,10 @@ object PluginBuild extends Build {
     ),
     libraryDependencies ++= Seq(
       "org.scalatest" %% "scalatest" % "1.7.1" % "test",
-      "org.json4s" %% "json4s-native" % "3.2.4"
+      "org.json4s" %% "json4s-native" % "3.2.4",
+      "com.google.protobuf" % "protobuf-java" % "2.5.0"
     ),
-    scalacOptions += "-deprecation"
+    scalacOptions ++= Seq("-deprecation", "-unchecked")
   ) ++ addSbtPlugin("play" % "sbt-plugin" % "2.1.0")
 
 }

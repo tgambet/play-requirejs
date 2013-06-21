@@ -15,10 +15,10 @@ class RequireCompilerSpec extends FunSpec {
 
   def runUseCase(useCase: String)(f: Function[File, Any]) = {
     val srcDir = resources / useCase
-    val targetDir = target / useCase
-    IO.delete(targetDir)
-    IO.copyDirectory(srcDir, targetDir)
-    f(targetDir)
+    val newSrcDir = target / useCase
+    IO.delete(newSrcDir)
+    IO.copyDirectory(srcDir, newSrcDir)
+    f(newSrcDir)
   }
 
   describe("RequireCompiler") {
@@ -45,58 +45,96 @@ class RequireCompilerSpec extends FunSpec {
           case _ => false
         }
       }
-
     }
 
     it ("should compile a project given a build.json file and produce a map of dependencies") {
 
       import RequireCompiler.compile
 
-      runUseCase("use_case_1")(targetDir =>
+      runUseCase("use_case_1")(sources =>
         assert {
-          compile(targetDir / "build.js").all.toList === List.empty[(File, File)] // TODO
+          compile(sources / "build.js").all.toSet === Set.empty[(File, File)] // TODO
         }
       )
 
-      runUseCase("use_case_2")(targetDir =>
+      runUseCase("use_case_2"){sources =>
+        val target = sources / "built"
         assert {
-          compile(targetDir / "build.js").all.toList === List(
-            ("app/app.js" -> "front.js"),
-            ("app/app.js" -> "back.js"),
-            ("back.js" -> "back.js"),
-            ("lib/jquery.js" -> "back.js"),
-            ("front.js" -> "front.js"),
-            ("app/admin.js" -> "back.js"),
-            ("lib/backbone.js" -> "front.js")
-          ).map{case (a, b) => (new File(a), new File(b))}
+          compile(sources / "build.js").all.toSet === Set(
+            (sources / "front.js"            -> target / "front.js"),
+            (sources / "app" / "app.js"      -> target / "front.js"),
+            (sources / "lib" / "backbone.js" -> target / "front.js"),
+            (sources / "app" / "app.js"      -> target / "back.js"),
+            (sources / "back.js"             -> target / "back.js"),
+            (sources / "lib" / "jquery.js"   -> target / "back.js"),
+            (sources / "app" / "admin.js"    -> target / "back.js")
+          )
         }
-      )
+      }
     }
 
-    it ("should track dependencies changes and rebuild affected modules only") {
+    it ("should accept a list of modules to be built") {
 
       import RequireCompiler.compile
 
-      runUseCase("use_case_2"){ targetDir =>
+      runUseCase("use_case_2"){ sources =>
+        val target = sources / "built"
         assert {
-          compile(targetDir / "build.js", List("front", "back")).all.toSet === Set(
-            ("app/app.js" -> "front.js"),
-            ("app/app.js" -> "back.js"),
-            ("back.js" -> "back.js"),
-            ("lib/jquery.js" -> "back.js"),
-            ("front.js" -> "front.js"),
-            ("app/admin.js" -> "back.js"),
-            ("lib/backbone.js" -> "front.js")
-          ).map{case (a, b) => (new File(a), new File(b))}
+          compile(sources / "build.js", List("front", "back")).all.toSet === Set(
+            (sources / "front.js"            -> target / "front.js"),
+            (sources / "app" / "app.js"      -> target / "front.js"),
+            (sources / "lib" / "backbone.js" -> target / "front.js"),
+            (sources / "app" / "app.js"      -> target / "back.js"),
+            (sources / "back.js"             -> target / "back.js"),
+            (sources / "lib" / "jquery.js"   -> target / "back.js"),
+            (sources / "app" / "admin.js"    -> target / "back.js")
+          )
         }
 
         assert {
-          compile(targetDir / "build.js", List("back")).all.toSet === Set(
-            ("app/app.js" -> "back.js"),
-            ("back.js" -> "back.js"),
-            ("lib/jquery.js" -> "back.js"),
-            ("app/admin.js" -> "back.js")
-          ).map{case (a, b) => (new File(a), new File(b))}
+          compile(sources / "build.js", List("back")).all.toSet === Set(
+            (sources / "back.js"           -> target / "back.js"),
+            (sources / "app" / "app.js"    -> target / "back.js"),
+            (sources / "app" / "admin.js"  -> target / "back.js"),
+            (sources / "lib" / "jquery.js" -> target / "back.js")
+          )
+        }
+      }
+
+    }
+
+    it ("should track changes to deps") {
+
+      import RequireCompiler.recompile
+
+      runUseCase("use_case_2"){ sources =>
+
+        val target = sources / "built"
+        val cacheFile = target / "cache"
+
+        IO.delete(cacheFile)
+
+        assert {
+          recompile(sources / "build.js", cacheFile).all.toSet === Set(
+            (sources / "back.js"             -> target / "back.js"),
+            (sources / "app" / "app.js"      -> target / "back.js"),
+            (sources / "app" / "admin.js"    -> target / "back.js"),
+            (sources / "lib" / "jquery.js"   -> target / "back.js"),
+            (sources / "front.js"            -> target / "front.js"),
+            (sources / "app" / "app.js"      -> target / "front.js"),
+            (sources / "lib" / "backbone.js" -> target / "front.js")
+          )
+        }
+
+        IO.touch(sources / "app" / "admin.js")
+
+        assert {
+          recompile(sources / "build.js", cacheFile).all.toSet === Set(
+            (sources / "back.js"           -> target / "back.js"),
+            (sources / "app" / "app.js"    -> target / "back.js"),
+            (sources / "app" / "admin.js"  -> target / "back.js") ,
+            (sources / "lib" / "jquery.js" -> target / "back.js")
+          )
         }
       }
 
