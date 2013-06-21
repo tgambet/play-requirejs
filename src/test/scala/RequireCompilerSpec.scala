@@ -13,7 +13,7 @@ class RequireCompilerSpec extends FunSpec {
   val target = new File("target/tests")
   val resources = new File("src/test/resources/")
 
-  def runUseCase(useCase: String)(f: Function[File, Any]) = {
+  def withUseCase(useCase: String)(f: Function[File, Any]) = {
     val srcDir = resources / useCase
     val newSrcDir = target / useCase
     IO.delete(newSrcDir)
@@ -38,26 +38,19 @@ class RequireCompilerSpec extends FunSpec {
           case _ => false
         }
       }
-
-      assert {
-        load(buildJs).values.get("modules") match {
-          case Some(obj: List[_]) => obj.size == 2
-          case _ => false
-        }
-      }
     }
 
     it ("should compile a project given a build.json file and produce a map of dependencies") {
 
       import RequireCompiler.compile
 
-      runUseCase("use_case_1")(sources =>
+      withUseCase("use_case_1")(sources =>
         assert {
           compile(sources / "build.js").all.toSet === Set.empty[(File, File)] // TODO
         }
       )
 
-      runUseCase("use_case_2"){sources =>
+      withUseCase("use_case_2"){sources =>
         val target = sources / "built"
         assert {
           compile(sources / "build.js").all.toSet === Set(
@@ -77,7 +70,7 @@ class RequireCompilerSpec extends FunSpec {
 
       import RequireCompiler.compile
 
-      runUseCase("use_case_2"){ sources =>
+      withUseCase("use_case_2"){ sources =>
         val target = sources / "built"
         assert {
           compile(sources / "build.js", List("front", "back")).all.toSet === Set(
@@ -103,11 +96,11 @@ class RequireCompilerSpec extends FunSpec {
 
     }
 
-    it ("should track changes to deps") {
+    it ("should recompile only modules which dependencies have changed") {
 
       import RequireCompiler.recompile
 
-      runUseCase("use_case_2"){ sources =>
+      withUseCase("use_case_2"){ sources =>
 
         val target = sources / "built"
         val cacheFile = target / "cache"
@@ -135,6 +128,10 @@ class RequireCompilerSpec extends FunSpec {
             (sources / "app" / "admin.js"  -> target / "back.js") ,
             (sources / "lib" / "jquery.js" -> target / "back.js")
           )
+        }
+
+        assert {
+          recompile(sources / "build.js", cacheFile).all.toSet === Set()
         }
       }
 
