@@ -13147,7 +13147,8 @@ define('rhino/optimize', ['logger'], function (logger) {
 
     //Helper for closure compiler, because of weird Java-JavaScript interactions.
     function closurefromCode(filename, content) {
-        return JSSourceFilefromCode.invoke(null, [filename, content]);
+        //return JSSourceFilefromCode.invoke(null, [filename, content]);
+        return Packages.com.google.javascript.jscomp.JSSourceFile.fromCode(filename, content)
     }
 
     optimize = {
