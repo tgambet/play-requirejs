@@ -1,5 +1,3 @@
 ({
-    name: "main",
-    out: "main-min.js",
-    logLevel: 1
+    modules: [{name: "main"}]
 })

@@ -1,5 +1,3 @@
 ({
-    "dir": "built",
-    "modules": [{ "name": "front" }, { "name": "back" }],
-    "optimize": "none"
+    "modules": [{ "name": "front" }, { "name": "back" }]
 })

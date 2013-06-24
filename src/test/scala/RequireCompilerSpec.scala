@@ -1,12 +1,8 @@
-
-package org.github.tgambet
+package net.tgambet
 
 import org.scalatest.FunSpec
 import sbt._
 import org.json4s._
-import org.json4s.JsonDSL._
-import org.json4s.native.JsonMethods._
-import java.nio.charset.Charset
 
 class RequireCompilerSpec extends FunSpec {
 
@@ -42,18 +38,21 @@ class RequireCompilerSpec extends FunSpec {
 
     it ("should compile a project given a build.json file and produce a map of dependencies") {
 
-      import RequireCompiler.compile
+      import RequireCompiler.compiler
 
-      withUseCase("use_case_1")(sources =>
+      withUseCase("use_case_1"){sources =>
         assert {
-          compile(sources / "build.js").all.toSet === Set.empty[(File, File)] // TODO
+          compiler(buildFile = Some(sources / "build.js")).all.toSet === Set(
+            (sources / "lib" / "jquery.js" -> sources / "requirejs-build" / "main.js"),
+            (sources / "main.js"   -> sources / "requirejs-build" / "main.js")
+          )
         }
-      )
+      }
 
       withUseCase("use_case_2"){sources =>
-        val target = sources / "built"
+        val target = sources / "requirejs-build"
         assert {
-          compile(sources / "build.js").all.toSet === Set(
+          compiler(buildFile = Some(sources / "build.js")).all.toSet === Set(
             (sources / "front.js"            -> target / "front.js"),
             (sources / "app" / "app.js"      -> target / "front.js"),
             (sources / "lib" / "backbone.js" -> target / "front.js"),
@@ -68,12 +67,16 @@ class RequireCompilerSpec extends FunSpec {
 
     it ("should accept a list of modules to be built") {
 
-      import RequireCompiler.compile
+      import RequireCompiler.compiler
 
       withUseCase("use_case_2"){ sources =>
-        val target = sources / "built"
+        val target = sources / "requirejs-build"
         assert {
-          compile(sources / "build.js", List("front", "back")).all.toSet === Set(
+          compiler(
+            buildFile = Some(sources / "build.js"),
+            modules = Some(Set("front", "back"))
+            //
+          ).all.toSet === Set(
             (sources / "front.js"            -> target / "front.js"),
             (sources / "app" / "app.js"      -> target / "front.js"),
             (sources / "lib" / "backbone.js" -> target / "front.js"),
@@ -85,7 +88,10 @@ class RequireCompilerSpec extends FunSpec {
         }
 
         assert {
-          compile(sources / "build.js", List("back")).all.toSet === Set(
+          compiler(
+            buildFile = Some(sources / "build.js"),
+            modules = Some(Set("back"))
+          ).all.toSet === Set(
             (sources / "back.js"           -> target / "back.js"),
             (sources / "app" / "app.js"    -> target / "back.js"),
             (sources / "app" / "admin.js"  -> target / "back.js"),
@@ -98,17 +104,20 @@ class RequireCompilerSpec extends FunSpec {
 
     it ("should recompile only modules which dependencies have changed") {
 
-      import RequireCompiler.recompile
+      import RequireCompiler.compiler
 
       withUseCase("use_case_2"){ sources =>
 
-        val target = sources / "built"
+        val target = sources / "requirejs-build"
         val cacheFile = target / "cache"
 
         IO.delete(cacheFile)
 
         assert {
-          recompile(sources / "build.js", cacheFile).all.toSet === Set(
+          compiler(
+            buildFile = Some(sources / "build.js"),
+            cacheFile = Some(cacheFile)
+          ).all.toSet === Set(
             (sources / "back.js"             -> target / "back.js"),
             (sources / "app" / "app.js"      -> target / "back.js"),
             (sources / "app" / "admin.js"    -> target / "back.js"),
@@ -122,7 +131,10 @@ class RequireCompilerSpec extends FunSpec {
         IO.touch(sources / "app" / "admin.js")
 
         assert {
-          recompile(sources / "build.js", cacheFile).all.toSet === Set(
+          compiler(
+            buildFile = Some(sources / "build.js"),
+            cacheFile = Some(cacheFile)
+          ).all.toSet === Set(
             (sources / "back.js"           -> target / "back.js"),
             (sources / "app" / "app.js"    -> target / "back.js"),
             (sources / "app" / "admin.js"  -> target / "back.js") ,
@@ -131,7 +143,10 @@ class RequireCompilerSpec extends FunSpec {
         }
 
         assert {
-          recompile(sources / "build.js", cacheFile).all.toSet === Set()
+          compiler(
+            buildFile = Some(sources / "build.js"),
+            cacheFile = Some(cacheFile)
+          ).all.toSet === Set()
         }
       }
 
