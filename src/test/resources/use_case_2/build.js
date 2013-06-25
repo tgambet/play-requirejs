@@ -1,3 +1,7 @@
 ({
-    "modules": [{ "name": "front" }, { "name": "back" }]
+    baseUrl: "./",
+    dir: "build",
+    appDir: "javascripts",
+    modules: [{ name: "main" }],
+    optimize: "none"
 })

@@ -2,7 +2,7 @@ package org.github.tgambet
 
 import sbt._
 import sbt.Keys._
-import play.Project._
+//import play.Project._
 
 object RequirePlugin extends Plugin {
 
@@ -42,27 +42,27 @@ object RequirePlugin extends Plugin {
     }
   }
 
-  val requireResourceGenerator: Project.Initialize[Task[Seq[File]]] = AssetsCompiler(
+/*  val requireResourceGenerator: Project.Initialize[Task[Seq[File]]] = AssetsCompiler(
     "require",
     { file => (file ** "*") filter { _.isFile } },
     assets,
     { (name, _) => name },
     { (file, _) => (IO.read(file), None, Seq.empty) },
     options
-  )
+  )*/
 
   lazy val requireBaseSettings = Seq (
     folder := "javascripts-require",
     assets <<= (sourceDirectory in Compile, folder)((sources, folder) => sources / "assets" / folder ** "*"),
     buildFile <<= baseDirectory(_ / "project" / "build.js"),
     buildTask <<= requireBuildTask,
-    buildTask2 <<= requireResourceGenerator,
+    //buildTask2 <<= requireResourceGenerator,
 
     options := Seq.empty,
-    resourceGenerators in Compile <+= requireResourceGenerator,
+    /*resourceGenerators in Compile <+= requireResourceGenerator,
     javascriptEntryPoints <<= (javascriptEntryPoints, sourceDirectory in Compile, folder)(
       (entryPoints, sources, folder) => (entryPoints --- (sources / "assets" / folder ** "*"))
-    ),
+    ),*/
     (packageBin in Compile) <<= (packageBin in Compile).dependsOn(requireBuildTask)
   )
 

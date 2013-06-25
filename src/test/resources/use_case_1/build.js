@@ -1,3 +1,4 @@
 ({
-    modules: [{name: "main"}]
+    name: "main",
+    out: "main-min.js"
 })

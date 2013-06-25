@@ -19,7 +19,7 @@ object PluginBuild extends Build {
       Classpaths.typesafeSnapshots
     ),
     libraryDependencies ++= Seq(
-      "org.scalatest" %% "scalatest" % "1.7.1" % "test",
+      "org.scalatest" %% "scalatest" % "2.0.M5b" % "test",
       "org.json4s" %% "json4s-native" % "3.2.4",
       "com.google.protobuf" % "protobuf-java" % "2.5.0"
     ),
