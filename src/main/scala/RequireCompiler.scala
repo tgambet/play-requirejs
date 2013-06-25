@@ -42,7 +42,25 @@ object RequireCompiler {
 
   }
 
-  def compile(buildFile: File): Unit = {
+  val defaultLogger = new Logger {
+    def log(level: Level.Value, message: => String) {
+      message.split("\n").foreach( msg =>
+        if (!(level == Level.Debug && msg == ""))
+          scala.Console.println("[" + level + "] " + msg)
+      )
+    }
+    def success(message: => String) { println ("SUCCESS TODO") }
+    def trace(t: => Throwable) {}
+  }
+
+  class JLogger(underlying: Logger) {
+    def info(s: String)  { underlying.info(s) }
+    def warn(s: String)  { underlying.warn(s) }
+    def error(s: String) { underlying.error(s) }
+    def trace(s: String) { underlying.debug(s) }
+  }
+
+  def compile(buildFile: File, logger: Logger = defaultLogger): Unit = {
     val mgr: ScriptEngineManager = new ScriptEngineManager()
     val engine: ScriptEngine = {
       val engine = mgr.getEngineByName("JavaScript")
@@ -54,6 +72,7 @@ object RequireCompiler {
     val args = Array[String]("-o", buildFile.toString)
     engine.put("arguments", args)
     engine.put("engine", engine)
+    engine.put("jlogger", new JLogger(logger))
     engine.getContext.setWriter(new RequirePrintWriter)
     engine.getContext.setErrorWriter(new RequirePrintWriter)
     engine.eval(stream)
@@ -145,27 +164,28 @@ class RequireCompiler(
    buildFile: Option[File] = None,
    baseDir: Option[File] = None,
    cacheFile: Option[File] = None,
-   logger: Logger = null) {
+   logger: Logger = RequireCompiler.defaultLogger) {
 
   import RequireCompiler._
   import RequireCompiler.PathUtils._
+
+  logger.info("Creating new RequireCompiler")
 
   val base = (baseDir map toPath) orElse (buildFile map (_ /~ path("."))) getOrElse path(".")
 
   val (source, target) = {
     import RequireCompiler.Defaults
     val config = loadConfig
-//    def resolve(f: File, base: Path): File = {
-//      (base.resolve(f.toPath)).normalize.toFile
-//    }
     val source: File =
       base / ((sourceDir map toPath orElse asPath(config \ "appDir") getOrElse path(Defaults.source))) normalize()
     val target: File =
       base / ((targetDir map toPath orElse asPath(config \ "dir") getOrElse file(Defaults.target))) normalize()
-    println("source: " + source)
-    println("target: " + target)
     (source, target)
   }
+
+  logger.info("- Source directory is: " + source)
+  logger.info("- Target directory is: " + target)
+  logger.info("- Base directory is: " + target)
 
   def compile(): Relation[File, File] = compile(None)
 
@@ -194,6 +214,8 @@ class RequireCompiler(
     val newModules: JArray =
       (modules orElse modulesNamesFromCache) map (m => getModulesFromConfig(m, config)) orElse baseModules getOrElse JArray(List.empty)
 
+    logger.info("Compilation started for modules: " + newModules)
+
     val buildDir = path(".require").toAbsolutePath
     val newBuild = (buildDir resolve "build.js").toAbsolutePath
 
@@ -208,12 +230,15 @@ class RequireCompiler(
         ("keepBuildDir" -> true) ~
         ("modules" -> newModules) ~
         ("optimize" -> "none") ~
-        ("logLevel" -> 1)
+        ("logLevel" -> 0)
     }
+
+    logger.debug("Writing temporary build information to file: " + newBuild)
+    logger.debug(IO.read(newBuild))
 
     IO.write(newBuild, pretty(render(newJson)))
 
-    RequireCompiler.compile(newBuild)
+    RequireCompiler.compile(newBuild, logger)
 
     val report = target / "build.txt"
     val res = Relation.empty[File, File] ++ (report.exists() match {

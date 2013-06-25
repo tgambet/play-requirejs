@@ -3245,25 +3245,29 @@ define('logger', ['env!env/print'], function (print) {
 
         trace: function (message) {
             if (this.level <= this.TRACE) {
-                this._print(message);
+                if (jlogger && jlogger.trace) jlogger.trace(message);
+                else this._print(message);
             }
         },
 
         info: function (message) {
             if (this.level <= this.INFO) {
-                this._print(message);
+                if (jlogger && jlogger.info) jlogger.info(message);
+                else this._print(message);
             }
         },
 
         warn: function (message) {
             if (this.level <= this.WARN) {
-                this._print(message);
+                if (jlogger && jlogger.warn) jlogger.warn(message);
+                else this._print(message);
             }
         },
 
         error: function (message) {
             if (this.level <= this.ERROR) {
-                this._print(message);
+                if (jlogger && jlogger.error) jlogger.error(message);
+                else this._print(message);
             }
         },
 

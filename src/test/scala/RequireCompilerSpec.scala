@@ -247,11 +247,15 @@ class RequireCompilerSpec extends FunSpec {
 
         val target = (base / "js-build").getAbsoluteFile
 
+        val cache = file(".require") / "cache"
+
+        IO.delete(cache)
+
         val compiler = new RequireCompiler(
           sourceDir = Some(source),
           targetDir = Some(target),
           buildFile = Some(base / "build.js"),
-          cacheFile = Some(file(".require") / "cache")
+          cacheFile = Some(cache)
         )
 
         it("should compile all modules the first time") {

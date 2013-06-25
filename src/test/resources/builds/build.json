@@ -7,7 +7,7 @@
         "foo.bar": "../scripts/foo/bar",
         "baz": "../another/path/baz"
     },
-    "modules": [{ "name": "module1" }, { "name": "module1", "include": ["lib/dep1"] }],
+    "modules": [{ "name": "module1" }, { "name": "module2", "include": ["lib/dep1"] }],
     "keepBuildDir": true,
     "optimize": "uglify",
     "shim": {

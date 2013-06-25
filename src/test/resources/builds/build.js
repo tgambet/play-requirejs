@@ -12,7 +12,7 @@
         "baz": "../another/path/baz" /*,
         "bar": "../to/bar" */
     },
-    modules: [{ name: "module1" }, { name: "module1", include: ["lib/dep1"] }],
+    modules: [{ name: "module1" }, { name: "module2", include: ["lib/dep1"] }],
     keepBuildDir: true,
     optimize: "uglify",
     //optimize: "uglify2",
