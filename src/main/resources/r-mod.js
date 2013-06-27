@@ -14206,7 +14206,7 @@ function (lang,   logger,   file,          parse,    optimize,   pragma,
                 }
 
                 //Remaining args are options to the build
-                cmdConfig = build.convertArrayToObject(args);
+                cmdConfig = build.convertArrayToObject(args.splice());
                 cmdConfig.buildFile = buildFile;
             } else {
                 cmdConfig = args;
@@ -14254,12 +14254,8 @@ function (lang,   logger,   file,          parse,    optimize,   pragma,
                 }
             }
 
-            if (logger.level > logger.ERROR) {
-                throw new Error(errorMsg);
-            } else {
-                logger.error(errorMsg);
-                quit(1);
-            }
+            logger.error(errorMsg);
+            throw new Error(errorMsg);
         }
     };
 
