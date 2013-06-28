@@ -4,14 +4,6 @@ import java.io.File
 import org.scalatest.Suite
 import sbt._
 
-/**
- * Created with IntelliJ IDEA.
- * User: Thomas
- * Date: 6/28/13
- * Time: 1:35 PM
- * To change this template use File | Settings | File Templates.
- */
-
 object UseCases {
 
   var count = 0
