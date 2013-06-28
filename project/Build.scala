@@ -23,7 +23,8 @@ object PluginBuild extends Build {
       "org.json4s" %% "json4s-native" % "3.2.4",
       "com.google.protobuf" % "protobuf-java" % "2.5.0"
     ),
-    scalacOptions ++= Seq("-deprecation", "-unchecked")
+    scalacOptions ++= Seq("-deprecation", "-unchecked"),
+    parallelExecution in Test := false
   ) ++ addSbtPlugin("play" % "sbt-plugin" % "2.1.0")
 
 }

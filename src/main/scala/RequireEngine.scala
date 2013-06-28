@@ -52,13 +52,13 @@ class RequireEngine(val logger: Logger = RequireEngine.defaultLogger) {
     }
   }
 
-  def run(args: Array[String]) {
+  def build(args: Array[String]) {
     val bindings = engine.createBindings()
     bindings.put("arguments", args)
     rjs.eval(bindings)
   }
 
-  def build(buildFile: File) { run(Array[String]("-o", buildFile.toString)) }
+  def build(buildFile: File) { build(Array[String]("-o", buildFile.toString)) }
 
   val addFixesToScope =
     """

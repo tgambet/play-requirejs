@@ -3,8 +3,8 @@
 */
 
 ({
-    appDir: "some/path/",
-    dir: "../some/path",
+    appDir: "some/appDir/",
+    dir: "../some/dir",
     baseUrl: "./",
     mainConfigFile: '../some/path/to/main.js',
     paths: {
