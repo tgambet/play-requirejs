@@ -1,14 +1,14 @@
 package net.tgambet
 
 import org.json4s._
+import org.json4s.JsonAST.JValue
+import java.io.File
+import sbt.{Relation, IO}
+import scala.util.matching.Regex
+
 import org.json4s.JsonDSL._
 import org.json4s.native.JsonMethods._
-import java.io.File
-import sbt.{Logger, Relation, IO}
-import org.json4s.JsonAST.JValue
-import net.tgambet.util.FileImplicits._
-import scala.util.matching.Regex
-import org.json4s
+import util.FileImplicits._
 
 object RequireCompiler {
 
@@ -18,8 +18,8 @@ object RequireCompiler {
 
     def jsonify(jsContent: String): String = {
       val replacements: Seq[(Regex, String)] = Seq(
-        ("""(//.*)""".r -> ""),             // remove single-line comments
         ("""(?s)(/\*.*?\*/)""".r -> ""),    // remove multi-line comments
+        ("""(//.*)""".r -> ""),             // remove single-line comments
         ("""(?m)^\s*\n""".r -> ""),         // remove empty lines
         ("""'""".r -> "\""),                // single to double quotes
         ("""(\w+):""".r -> "\"$1\":"),      // quote unquoted keys
@@ -124,11 +124,9 @@ class RequireCompiler(
     logger.info("- Build directory: " + buildDir)
   }
 
-  def build(): Relation[File, File] =
-    build(load(buildFile))
+  def build(): Relation[File, File] = build(load(buildFile))
 
-  def build(moduleIds: Set[String]): Relation[File, File] =
-    build(configForModules(load(buildFile), moduleIds))
+  def build(moduleIds: Set[String]): Relation[File, File] = build(configForModules(load(buildFile), moduleIds))
 
   def build(config: Config): Relation[File, File] = {
 

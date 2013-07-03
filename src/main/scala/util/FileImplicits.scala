@@ -1,6 +1,5 @@
 package net.tgambet.util
 
-import java.nio.file.{Path, Paths}
 import java.io.File
 
 object FileImplicits {

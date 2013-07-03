@@ -2,9 +2,6 @@ package net.tgambet
 
 import sbt._
 import sbt.Keys._
-import sbt.File
-
-//import play.Project._
 
 object RequirePlugin extends Plugin {
 
@@ -28,21 +25,25 @@ object RequirePlugin extends Plugin {
     baseDir,
     streams).apply{(sourceDir, targetDir, buildFile, cacheFile, baseDir, s) =>
 
-    new RequireCompiler(
+    new CachedCompiler(
       source = sourceDir,
       target = targetDir,
       buildFile = buildFile,
-      buildDir = baseDir)
+      buildDir = baseDir,
+      cacheFile = cacheFile)
 
   }
 
   lazy val requireBuildTask: Project.Initialize[Task[Seq[File]]] =
-    (compiler, streams) map { (compiler, s) => compiler.build()._2s.toSeq }
+    (compiler, targetDir, streams) map { (compiler, targetDir, s) =>
+      compiler.build()
+      (targetDir ** "*").get
+    }
 
   lazy val requireBaseSettings = Seq (
     baseDir   <<= baseDirectory,
     buildFile <<= baseDirectory(_ / "project" / "build.js"),
-    cacheFile <<= baseDir(_ / ".require" / "cache"),
+    cacheFile <<= cacheDirectory(_ / "requirejs"),
     compiler  <<= requireCompiler,
     buildTask <<= requireBuildTask,
     resourceGenerators in Compile <+= requireBuildTask

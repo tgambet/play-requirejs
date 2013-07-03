@@ -14,7 +14,7 @@ trait UseCases { this: Suite =>
 
   import UseCases.count
 
-  def withUseCase(useCase: String)(f: Function[File, Any]) = {
+  def withUseCase[A](useCase: String)(f: Function[File, A]): A = {
     count = count + 1
     val target = file("target/requirejs")
     val resources = file("src/test/resources/")
@@ -23,7 +23,6 @@ trait UseCases { this: Suite =>
     IO.delete(newSrcDir)
     IO.copyDirectory(srcDir, newSrcDir)
     f(newSrcDir)
-    //IO.delete(newSrcDir)
   }
 
 }
