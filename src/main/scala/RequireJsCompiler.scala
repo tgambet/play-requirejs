@@ -8,9 +8,9 @@ import scala.util.matching.Regex
 
 import org.json4s.JsonDSL._
 import org.json4s.native.JsonMethods._
-import util.FileImplicits._
+import FileImplicits._
 
-object RequireCompiler {
+object RequireJsCompiler {
 
   type Config = JObject
 
@@ -59,9 +59,9 @@ object RequireCompiler {
   /**
    *
    * @param buildFile A valid require.js build file
-   * @return A RequireCompiler backed by a build file
+   * @return A RequireJsCompiler backed by a build file
    */
-  def apply(buildFile: File): RequireCompiler = {
+  def apply(buildFile: File): RequireJsCompiler = {
     val config = load(buildFile)
     val buildDir = buildFile.parent
     val dir = asFile(config \ "dir").getOrElse {
@@ -70,7 +70,7 @@ object RequireCompiler {
     val appDir = asFile(config \ "appDir").getOrElse {
       throw new Exception("No source directory ('appDir' option) found in the build file " + buildFile)
     }
-    new RequireCompiler(
+    new RequireJsCompiler(
       buildDir = buildDir,
       source = buildDir / appDir,
       target = buildDir / dir,
@@ -85,9 +85,9 @@ object RequireCompiler {
    * @param buildFile
    * @return
    */
-  def apply(sourceDir: File, targetDir: File, buildFile: File = file("build.js")): RequireCompiler = {
+  def apply(sourceDir: File, targetDir: File, buildFile: File = file("build.js")): RequireJsCompiler = {
     val buildDir = buildFile.parent
-    new RequireCompiler(
+    new RequireJsCompiler(
       buildDir = buildDir,
       source = sourceDir,
       target = targetDir,
@@ -105,19 +105,19 @@ object RequireCompiler {
 
 }
 
-class RequireCompiler(
+class RequireJsCompiler(
    val source: File,
    val target: File,
    val buildFile: File,
-   val buildDir: File) extends RequireEngine {
+   val buildDir: File) extends RequireJsEngine {
 
-  import RequireCompiler._
+  import RequireJsCompiler._
 
   if (target isChildOf source)
     throw new Exception("the target directory cannot be a child of the source directory")
 
   val _ = {
-    logger.info("New RequireCompiler")
+    logger.info("New RequireJsCompiler")
     logger.info("- Source directory: " + source.toPath)
     logger.info("- Target directory: " + target.toPath)
     logger.info("- Build file path: " + buildFile.toPath)

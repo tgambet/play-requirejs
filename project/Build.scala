@@ -12,6 +12,7 @@ object PluginBuild extends Build {
 
   lazy val mainSettings: Seq[Project.Setting[_]] = Defaults.defaultSettings ++ Seq(
     sbtPlugin := true,
+    parallelExecution in Test := false,
     organization := "net.tgambet",
     name := "play-requirejs",
     version := "0.1-SNAPSHOT",

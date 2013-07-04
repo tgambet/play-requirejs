@@ -5,13 +5,13 @@ import org.json4s._
 import sbt._
 import scala.Predef._
 
-class RequireCompilerTest extends FunSpec with UseCases {
+class RequireJsCompilerTest extends FunSpec with UseCases {
 
   val resources = new File("src/test/resources/")
 
-  describe("RequireCompiler") {
+  describe("RequireJsCompiler") {
 
-    import RequireCompiler._
+    import RequireJsCompiler._
 
     it("should succesfully load require.js build files written in js or json syntax") {
 
@@ -43,13 +43,13 @@ class RequireCompilerTest extends FunSpec with UseCases {
 
     describe("apply(buildFile)") {
 
-      it("should create a RequireCompiler backed by buildFile") {
+      it("should create a RequireJsCompiler backed by buildFile") {
 
         withUseCase("use_case_1"){ sources =>
 
           IO.write(sources / "build.js", "({ dir: 'target', appDir: 'source' })")
 
-          val compiler = RequireCompiler(sources / "build.js")
+          val compiler = RequireJsCompiler(sources / "build.js")
 
           assert(compiler.buildDir === sources)
           assert(compiler.source === sources / "source")
@@ -63,7 +63,7 @@ class RequireCompilerTest extends FunSpec with UseCases {
 
           IO.write(sources / "build.js", "({ dir: 'source/target', appDir: 'source' })")
 
-          intercept[Exception](RequireCompiler(sources / "build.js"))
+          intercept[Exception](RequireJsCompiler(sources / "build.js"))
         }
       }
 
@@ -73,14 +73,14 @@ class RequireCompilerTest extends FunSpec with UseCases {
 
           IO.write(sources / "build.js", "({ name: 'main', out: 'main-min.js' })")
 
-          intercept[Exception](RequireCompiler(sources / "build.js"))
+          intercept[Exception](RequireJsCompiler(sources / "build.js"))
         }
       }
     }
 
     describe("apply(sourceDir, targetDir, buildFile)") {
 
-      describe("should create a RequireCompiler") {
+      describe("should create a RequireJsCompiler") {
 
         it("when buildFile exists and contains no 'dir' or 'appDir' option") {
 
@@ -88,7 +88,7 @@ class RequireCompilerTest extends FunSpec with UseCases {
 
             IO.write(sources / "build.js", "({ })")
 
-            val compiler = RequireCompiler(sources / "source", sources / "target", sources / "build.js")
+            val compiler = RequireJsCompiler(sources / "source", sources / "target", sources / "build.js")
 
             assert(compiler.buildDir === sources)
             assert(compiler.source === sources / "source")
@@ -102,7 +102,7 @@ class RequireCompilerTest extends FunSpec with UseCases {
 
             IO.write(sources / "build.js", "({ dir: 'something', appDir: 'somethingElse' })")
 
-            val compiler = RequireCompiler(sources / "source", sources / "target", sources / "build.js")
+            val compiler = RequireJsCompiler(sources / "source", sources / "target", sources / "build.js")
 
             assert(compiler.buildDir === sources)
             assert(compiler.source === sources / "source")
@@ -116,7 +116,7 @@ class RequireCompilerTest extends FunSpec with UseCases {
 
             val noBuild = sources / "build-404.js"
 
-            val compiler = RequireCompiler(sources / "source", sources / "target", noBuild)
+            val compiler = RequireJsCompiler(sources / "source", sources / "target", noBuild)
 
             assert(compiler.buildDir === sources)
             assert(compiler.source === sources / "source")
@@ -135,7 +135,7 @@ class RequireCompilerTest extends FunSpec with UseCases {
           val source = sources / "javascripts"
           val target = sources / "build"
 
-          val compiler = RequireCompiler(sources / "build.js")
+          val compiler = RequireJsCompiler(sources / "build.js")
 
           assert(compiler.build().all.toSet === Set(
             (source / "lib" / "jquery.js" -> target / "main.js"),
@@ -149,7 +149,7 @@ class RequireCompilerTest extends FunSpec with UseCases {
           val source = sources / "javascripts"
           val target = sources / "build2"
 
-          val compiler = RequireCompiler(source, target, sources / "build.js")
+          val compiler = RequireJsCompiler(source, target, sources / "build.js")
 
           assert(compiler.build().all.toSet === Set(
             (source / "lib" / "jquery.js" -> target / "main.js"),
@@ -168,7 +168,7 @@ class RequireCompilerTest extends FunSpec with UseCases {
           val source = sources / "js"
           val target = sources / "build"
 
-          val compiler = RequireCompiler(source, target, sources / "build.js")
+          val compiler = RequireJsCompiler(source, target, sources / "build.js")
 
           assert(compiler.build().all.toSet === Set(
             (source / "front.js"            -> target / "front.js"),
@@ -225,7 +225,7 @@ class RequireCompilerTest extends FunSpec with UseCases {
 
         IO.delete(cache)
 
-        val compiler = new RequireCompiler(
+        val compiler = new RequireJsCompiler(
           sourceDir = Some(source),
           targetDir = Some(target),
           buildFile = Some(base / "build.js"),

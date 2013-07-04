@@ -1,17 +1,18 @@
 package net.tgambet
 
-import RequireCompiler._
 import sbt.{IO, File, Relation, ModifiedFileInfo, FileFilter, FileInfo, Sync, PathFinder}
-import util.FileImplicits._
 import org.json4s.JsonAST.JObject
-import org.json4s.JsonDSL._
 
-class CachedCompiler(
+import org.json4s.JsonDSL._
+import RequireJsCompiler._
+import FileImplicits._
+
+class CachedRequireJsCompiler(
   source: File,
   target: File,
   buildFile: File,
   buildDir: File,
-  val cacheFile: File) extends RequireCompiler(source, target, buildFile, buildDir) {
+  val cacheFile: File) extends RequireJsCompiler(source, target, buildFile, buildDir) {
 
   override def build(config: Config) : Relation[File, File] = {
 

@@ -3,9 +3,9 @@ package net.tgambet
 import org.scalatest.FunSpec
 import sbt._
 
-class CachedCompilerTest extends FunSpec with UseCases {
+class CachedRequireJsCompilerTest extends FunSpec with UseCases {
 
-  describe("A CachedCompiler") {
+  describe("A CachedRequireJsCompiler") {
 
     withUseCase("use_case_3"){ base =>
 
@@ -19,7 +19,7 @@ class CachedCompilerTest extends FunSpec with UseCases {
 
       IO.delete(cache)
 
-      val compiler = new CachedCompiler(
+      val compiler = new CachedRequireJsCompiler(
         source = source,
         target = target,
         buildFile = build,

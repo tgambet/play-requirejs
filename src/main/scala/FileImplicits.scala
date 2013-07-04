@@ -1,4 +1,4 @@
-package net.tgambet.util
+package net.tgambet
 
 import java.io.File
 

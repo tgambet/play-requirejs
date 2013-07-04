@@ -4,7 +4,7 @@ import java.io.File
 import sbt.{Level, Logger, IO}
 import javax.script._
 
-object RequireEngine {
+object RequireJsEngine {
 
   val defaultLogger = new Logger {
     def log(level: Level.Value, message: => String) { scala.Console.println("[r.js] " + message) }
@@ -14,7 +14,7 @@ object RequireEngine {
 
 }
 
-class RequireEngine(val logger: Logger = RequireEngine.defaultLogger) {
+class RequireJsEngine(val logger: Logger = RequireJsEngine.defaultLogger) {
 
   val engine: ScriptEngine = {
     val engine = new ScriptEngineManager().getEngineByName("JavaScript")
@@ -26,7 +26,7 @@ class RequireEngine(val logger: Logger = RequireEngine.defaultLogger) {
 
     val engineFix = new Object {
       def load(file: String) = engine.eval(readFile(file))
-      def readFile(fileName: String): String = IO.read(new File(fileName))
+      def readFile(fileName: String) = IO.read(new File(fileName))
       def quit(code: Int) {}
     }
     globals.put("engineFix", engineFix)

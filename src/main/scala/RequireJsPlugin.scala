@@ -3,7 +3,7 @@ package net.tgambet
 import sbt._
 import sbt.Keys._
 
-object RequirePlugin extends Plugin {
+object RequireJsPlugin extends Plugin {
 
   object RequireJS {
     val sourceDir  = SettingKey[File]("requirejs-source-dir")
@@ -11,13 +11,14 @@ object RequirePlugin extends Plugin {
     val buildFile  = SettingKey[File]("requirejs-build-file")
     val cacheFile  = SettingKey[File]("requirejs-cache-file")
     val baseDir    = SettingKey[File]("requirejs-base-dir")
-    val compiler   = SettingKey[RequireCompiler]("requirejs-compiler")
+    val compiler   = SettingKey[RequireJsCompiler]("requirejs-compiler")
     val buildTask  = TaskKey[Seq[File]]("requirejs-build")
+    val clearTask  = TaskKey[Unit]("requirejs-clear")
   }
 
   import RequireJS._
 
-  lazy val requireCompiler: Project.Initialize[RequireCompiler] = (
+  lazy val requireCompiler: Project.Initialize[RequireJsCompiler] = (
     sourceDir,
     targetDir,
     buildFile,
@@ -25,7 +26,7 @@ object RequirePlugin extends Plugin {
     baseDir,
     streams).apply{(sourceDir, targetDir, buildFile, cacheFile, baseDir, s) =>
 
-    new CachedCompiler(
+    new CachedRequireJsCompiler(
       source = sourceDir,
       target = targetDir,
       buildFile = buildFile,
@@ -37,8 +38,11 @@ object RequirePlugin extends Plugin {
   lazy val requireBuildTask: Project.Initialize[Task[Seq[File]]] =
     (compiler, targetDir, streams) map { (compiler, targetDir, s) =>
       compiler.build()
+      // return all created files directly. compiler.build()._2.toSeq should be equivalent.
       (targetDir ** "*").get
     }
+
+  lazy val requireClearTask = (cacheFile) map { IO.delete(_) }
 
   lazy val requireBaseSettings = Seq (
     baseDir   <<= baseDirectory,
@@ -46,6 +50,7 @@ object RequirePlugin extends Plugin {
     cacheFile <<= cacheDirectory(_ / "requirejs"),
     compiler  <<= requireCompiler,
     buildTask <<= requireBuildTask,
+    clearTask <<= requireClearTask,
     resourceGenerators in Compile <+= requireBuildTask
     //buildTask2 <<= requireResourceGenerator,
 

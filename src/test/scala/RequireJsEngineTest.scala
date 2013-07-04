@@ -3,11 +3,11 @@ package net.tgambet
 import org.scalatest.FunSpec
 import sbt._
 
-class RequireEngineTest extends FunSpec with UseCases {
+class RequireJsEngineTest extends FunSpec with UseCases {
 
-  describe("A RequireEngine") {
+  describe("A RequireJsEngine") {
 
-    val engine = new RequireEngine()
+    val engine = new RequireJsEngine()
 
     it("should run r.js with no arguments without exception") {
       engine.build(Array.empty[String])
