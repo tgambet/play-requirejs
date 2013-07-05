@@ -1,15 +1,14 @@
-package net.tgambet
+package net.tgambet.requirejs
 
-import org.scalatest.FunSpec
-import org.json4s._
 import sbt._
-import scala.Predef._
+import org.json4s._
+import org.scalatest.FunSpec
 
 class RequireJsCompilerTest extends FunSpec with UseCases {
 
   val resources = new File("src/test/resources/")
 
-  describe("RequireJsCompiler") {
+  describe("A RequireJs compiler") {
 
     import RequireJsCompiler._
 
@@ -41,9 +40,9 @@ class RequireJsCompilerTest extends FunSpec with UseCases {
       }
     }
 
-    describe("apply(buildFile)") {
+    describe("when instanciated with apply(buildFile)") {
 
-      it("should create a RequireJsCompiler backed by buildFile") {
+      it("should create a compiler with source and target directories consistent with the build file") {
 
         withUseCase("use_case_1"){ sources =>
 
@@ -78,9 +77,9 @@ class RequireJsCompilerTest extends FunSpec with UseCases {
       }
     }
 
-    describe("apply(sourceDir, targetDir, buildFile)") {
+    describe("when instanciated with apply(sourceDir, targetDir, buildFile)") {
 
-      describe("should create a RequireJsCompiler") {
+      describe("should create a compiler") {
 
         it("when buildFile exists and contains no 'dir' or 'appDir' option") {
 
@@ -209,73 +208,5 @@ class RequireJsCompilerTest extends FunSpec with UseCases {
       }
     }
   }
-
-
-/*
-
-    describe("when a cacheFile is defined") {
-
-      withUseCase("use_case_3"){base =>
-
-        val source = (base / "js").getAbsoluteFile
-
-        val target = (base / "js-build").getAbsoluteFile
-
-        val cache = file(".require") / "cache"
-
-        IO.delete(cache)
-
-        val compiler = new RequireJsCompiler(
-          sourceDir = Some(source),
-          targetDir = Some(target),
-          buildFile = Some(base / "build.js"),
-          cacheFile = Some(cache)
-        )
-
-        it("should compile all modules the first time") {
-
-          assert {
-            compiler.compile().all.toSet === Set(
-              (source / "front.js"            -> target / "front.js"),
-              (source / "app" / "app.js"      -> target / "front.js"),
-              (source / "lib" / "backbone.js" -> target / "front.js"),
-              (source / "app" / "app.js"      -> target / "back.js"),
-              (source / "back.js"             -> target / "back.js"),
-              (source / "lib" / "jquery.js"   -> target / "back.js"),
-              (source / "app" / "admin.js"    -> target / "back.js")
-            )
-          }
-
-        }
-
-        it("should only compile modules that have dependencies changed since last build then") {
-
-          IO.touch(source / "app" / "admin.js")
-
-          assert {
-            compiler.compile().all.toSet === Set(
-              (source / "back.js"           -> target / "back.js"),
-              (source / "app" / "app.js"    -> target / "back.js"),
-              (source / "app" / "admin.js"  -> target / "back.js") ,
-              (source / "lib" / "jquery.js" -> target / "back.js")
-            )
-          }
-
-        }
-
-        it ("shouldn't compile anything if no dependencies have changed") {
-          assert {
-            compiler.compile().all.toSet === Set()
-          }
-        }
-
-      }
-
-    }
-
-  }
-}
-
-*/
 
 }

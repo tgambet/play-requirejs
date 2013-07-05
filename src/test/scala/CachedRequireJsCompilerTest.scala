@@ -1,4 +1,4 @@
-package net.tgambet
+package net.tgambet.requirejs
 
 import org.scalatest.FunSpec
 import sbt._

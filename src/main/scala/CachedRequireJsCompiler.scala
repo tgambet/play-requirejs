@@ -1,11 +1,26 @@
-package net.tgambet
+package net.tgambet.requirejs
 
-import sbt.{IO, File, Relation, ModifiedFileInfo, FileFilter, FileInfo, Sync, PathFinder}
+// don't import sbt._ because we don't want the file implicits
+import sbt.File
+import sbt.Relation
+import sbt.ModifiedFileInfo
+import sbt.FileFilter
+import sbt.FileInfo
+import sbt.Sync
+import sbt.PathFinder
+
+import org.slf4j.{LoggerFactory, Logger}
 import org.json4s.JsonAST.JObject
 
 import org.json4s.JsonDSL._
 import RequireJsCompiler._
 import FileImplicits._
+
+object CachedRequireJsCompiler {
+
+  val logger = LoggerFactory.getLogger(classOf[CachedRequireJsCompiler])
+
+}
 
 class CachedRequireJsCompiler(
   source: File,
@@ -13,6 +28,8 @@ class CachedRequireJsCompiler(
   buildFile: File,
   buildDir: File,
   val cacheFile: File) extends RequireJsCompiler(source, target, buildFile, buildDir) {
+
+  import CachedRequireJsCompiler._
 
   override def build(config: Config) : Relation[File, File] = {
 
@@ -46,7 +63,7 @@ class CachedRequireJsCompiler(
 
         val files = changedFiles.map(_ relativeTo source)
         files.foreach{file =>
-          println("Copying asset: " + file)
+          logger.info("Copying asset: " + file)
           Sync.copy(source / file, target / file)
         }
         Sync.writeInfo(cacheFile, previousRelation, currentInfo)(FileInfo.lastModified.format)
@@ -55,7 +72,7 @@ class CachedRequireJsCompiler(
 
     } else {
 
-      println("Rebuilding everything")
+      logger.info("Rebuilding everything")
 
       val res = super.build(config ~ ("keepBuildDir" -> false))
       Sync.writeInfo(cacheFile, res, currentInfo)(FileInfo.lastModified.format)

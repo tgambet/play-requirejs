@@ -1,9 +1,10 @@
-package net.tgambet
+package net.tgambet.requirejs
 
 import org.json4s._
 import org.json4s.JsonAST.JValue
 import java.io.File
 import sbt.{Relation, IO}
+import org.slf4j.{LoggerFactory, Logger}
 import scala.util.matching.Regex
 
 import org.json4s.JsonDSL._
@@ -11,6 +12,8 @@ import org.json4s.native.JsonMethods._
 import FileImplicits._
 
 object RequireJsCompiler {
+
+  val logger = LoggerFactory.getLogger(classOf[RequireJsCompiler])
 
   type Config = JObject
 
@@ -114,7 +117,7 @@ class RequireJsCompiler(
   import RequireJsCompiler._
 
   if (target isChildOf source)
-    throw new Exception("the target directory cannot be a child of the source directory")
+    throw new RequireJsException("Failed to create a compiler: the target directory (" + target + ") cannot be a child of the source directory (" + source + ")")
 
   val _ = {
     logger.info("New RequireJsCompiler")
@@ -150,7 +153,9 @@ class RequireJsCompiler(
 
     IO.write(newBuild, pretty(render(newJson)))
 
-    logger.debug(IO.read(newBuild))
+    if (logger.isDebugEnabled){
+      IO.read(newBuild).split("\n").foreach(logger.debug)
+    }
 
     build(newBuild)
 

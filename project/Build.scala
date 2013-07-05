@@ -23,16 +23,12 @@ object PluginBuild extends Build {
     libraryDependencies ++= Seq(
       "org.scalatest" %% "scalatest" % "2.0.M5b" % "test",
       "org.json4s" %% "json4s-native" % "3.2.4",
-      //"play" %% "play-json" % "2.2-SNAPSHOT",
-      "com.google.protobuf" % "protobuf-java" % "2.5.0"
-    )
-    /*libraryDependencies += sbtPluginExtra(
-      m = "play" % "sbt-plugin" % "2.2-SNAPSHOT", // Plugin module name and version
-      sbtV = "0.12",    // SBT version
-      scalaV = "2.9.2"    // Scala version compiled the plugin
-    ),*/
-    //scalacOptions ++= Seq("-deprecation", "-unchecked"),
-    //parallelExecution in Test := false
+      //"play" %% "play-json" % "2.2-SNAPSHOT", // need scala 2.10, hence sbt 0.13
+      "com.google.protobuf" % "protobuf-java" % "2.5.0",
+      "org.slf4j" % "slf4j-api" % "1.7.5",
+      "ch.qos.logback" % "logback-classic" % "1.0.13" % "test"
+    ),
+    scalacOptions ++= Seq("-deprecation", "-unchecked")
   )// ++ addSbtPlugin("play" % "sbt-plugin" % "2.1.0")
 
 

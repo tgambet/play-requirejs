@@ -1,3 +1,7 @@
-package net.tgambet
+package net.tgambet.requirejs
 
-class RequireJsException extends java.lang.Exception
+class RequireJsException(message: String = null, cause: Throwable = null) extends Exception(message, cause)
+
+object RequireJsException {
+  def apply(message: String = null, cause: Throwable = null) = new RequireJsException(message, cause)
+}

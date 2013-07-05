@@ -1,4 +1,4 @@
-package net.tgambet
+package net.tgambet.requirejs
 
 import sbt._
 import sbt.Keys._
@@ -11,14 +11,14 @@ object RequireJsPlugin extends Plugin {
     val buildFile  = SettingKey[File]("requirejs-build-file")
     val cacheFile  = SettingKey[File]("requirejs-cache-file")
     val baseDir    = SettingKey[File]("requirejs-base-dir")
-    val compiler   = SettingKey[RequireJsCompiler]("requirejs-compiler")
+    val compiler   = SettingKey[CachedRequireJsCompiler]("requirejs-compiler")
     val buildTask  = TaskKey[Seq[File]]("requirejs-build")
     val clearTask  = TaskKey[Unit]("requirejs-clear")
   }
 
   import RequireJS._
 
-  lazy val requireCompiler: Project.Initialize[RequireJsCompiler] = (
+  lazy val requireCompiler: Project.Initialize[CachedRequireJsCompiler] = (
     sourceDir,
     targetDir,
     buildFile,
@@ -52,7 +52,6 @@ object RequireJsPlugin extends Plugin {
     buildTask <<= requireBuildTask,
     clearTask <<= requireClearTask,
     resourceGenerators in Compile <+= requireBuildTask
-    //buildTask2 <<= requireResourceGenerator,
 
     /*resourceGenerators in Compile <+= requireResourceGenerator,
     javascriptEntryPoints <<= (javascriptEntryPoints, sourceDirectory in Compile, folder)(

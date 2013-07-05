@@ -1,4 +1,4 @@
-package net.tgambet
+package net.tgambet.requirejs
 
 import java.io.File
 import org.scalatest.Suite
