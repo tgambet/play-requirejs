@@ -11,14 +11,14 @@ object RequireJsPlugin extends Plugin {
     val buildFile  = SettingKey[File]("requirejs-build-file")
     val cacheFile  = SettingKey[File]("requirejs-cache-file")
     val baseDir    = SettingKey[File]("requirejs-base-dir")
-    val compiler   = SettingKey[CachedRequireJsCompiler]("requirejs-compiler")
+    val compiler   = SettingKey[RequireJsCompiler]("requirejs-compiler")
     val buildTask  = TaskKey[Seq[File]]("requirejs-build")
     val clearTask  = TaskKey[Unit]("requirejs-clear")
   }
 
   import RequireJS._
 
-  lazy val requireCompiler: Project.Initialize[CachedRequireJsCompiler] = (
+  lazy val requireCompiler: Project.Initialize[RequireJsCompiler] = (
     sourceDir,
     targetDir,
     buildFile,
@@ -26,18 +26,17 @@ object RequireJsPlugin extends Plugin {
     baseDir,
     streams).apply{(sourceDir, targetDir, buildFile, cacheFile, baseDir, s) =>
 
-    new CachedRequireJsCompiler(
+    new RequireJsCompiler(
       source = sourceDir,
       target = targetDir,
       buildFile = buildFile,
-      buildDir = baseDir,
-      cacheFile = cacheFile)
+      buildDir = baseDir)
 
   }
 
   lazy val requireBuildTask: Project.Initialize[Task[Seq[File]]] =
-    (compiler, targetDir, streams) map { (compiler, targetDir, s) =>
-      compiler.build()
+    (compiler, targetDir, cacheFile, streams) map { (compiler, targetDir, cacheFile, s) =>
+      compiler.devBuild(cacheFile)
       // return all created files directly. compiler.build()._2.toSeq should be equivalent.
       (targetDir ** "*").get
     }

@@ -3,7 +3,13 @@ package net.tgambet.requirejs
 import org.json4s._
 import org.json4s.JsonAST.JValue
 import java.io.File
-import sbt.{Relation, IO}
+import sbt.IO
+import sbt.Relation
+import sbt.ModifiedFileInfo
+import sbt.FileFilter
+import sbt.FileInfo
+import sbt.Sync
+import sbt.PathFinder
 import org.slf4j.{LoggerFactory, Logger}
 import scala.util.matching.Regex
 
@@ -37,7 +43,7 @@ object RequireJsCompiler {
       val content = IO.read(file)
       parse(if (file.getName.endsWith(".js")) jsonify(content) else content).asInstanceOf[JObject]
     } catch {
-      case e: Exception => throw new Exception("Error loading buildFile: " + file, e)
+      case e: Exception => throw new RequireJsException("Error loading buildFile: " + file, e)
     }
 
   }
@@ -119,13 +125,7 @@ class RequireJsCompiler(
   if (target isChildOf source)
     throw new RequireJsException("Failed to create a compiler: the target directory (" + target + ") cannot be a child of the source directory (" + source + ")")
 
-  val _ = {
-    logger.info("New RequireJsCompiler")
-    logger.info("- Source directory: " + source.toPath)
-    logger.info("- Target directory: " + target.toPath)
-    logger.info("- Build file path: " + buildFile.toPath)
-    logger.info("- Build directory: " + buildDir)
-  }
+  //if buildFile ! exists warn
 
   def build(): Relation[File, File] = build(load(buildFile))
 
@@ -133,13 +133,18 @@ class RequireJsCompiler(
 
   def build(config: Config): Relation[File, File] = {
 
+    logger.info("Build started")
+    logger.debug("- Source directory: " + source.toPath)
+    logger.debug("- Target directory: " + target.toPath)
+    logger.debug("- Build file path: " + buildFile.toPath)
+    logger.debug("- Build directory: " + buildDir)
+
     val newBuild = buildDir / ".build-require.js"
 
     val newJson = {
 
       val defaults =
         ("baseUrl" -> "./") ~ // r.js throws an unhelpful exception when this is not set so let's make it a default
-        ("optimize" -> "none") ~
         ("logLevel" -> 0)
 
       val overrides =
@@ -153,15 +158,69 @@ class RequireJsCompiler(
 
     IO.write(newBuild, pretty(render(newJson)))
 
-    if (logger.isDebugEnabled){
-      IO.read(newBuild).split("\n").foreach(logger.debug)
-    }
+    //if (logger.isDebugEnabled){
+      logger.trace(IO.read(newBuild)) //.split("\n").foreach(logger.debug)
+    //}
 
     build(newBuild)
 
     val report = target / "build.txt"
 
     parseReport(report, source, target)
+  }
+
+  def devBuild(cacheFile: File): Relation[File, File] = devBuild(load(buildFile), cacheFile)
+
+  def devBuild(config: Config, cacheFile: File): Relation[File, File] = {
+
+    val currentInfo: Map[File, ModifiedFileInfo] = {
+      import FileFilter._
+      val assets = ((PathFinder(source) ** "*") filter (_.isFile)) +++ buildFile
+      assets.get.map(f => f.getAbsoluteFile -> FileInfo.lastModified(f)).toMap
+    }
+
+    val (previousRelation, previousInfo) = Sync.readInfo(cacheFile)(FileInfo.lastModified.format)
+
+    lazy val changedFiles: Seq[File] =
+      currentInfo.filter(e => !previousInfo.get(e._1).isDefined || previousInfo(e._1).lastModified < e._2.lastModified).map(_._1).toSeq ++
+        previousInfo.filter(e => !currentInfo.get(e._1).isDefined).map(_._1).toSeq
+
+    if (!previousInfo.isEmpty && !changedFiles.contains(buildFile.getAbsoluteFile)) {
+
+      val affectedModules = previousRelation.all.collect {
+        case (sourceF, module) if changedFiles.contains(sourceF) => module
+      }
+
+      val modules = affectedModules.map{f => (f relativeTo target).toString.replaceAll("""\.js$""", "").replaceAll("""\\""", "/")}.toSet
+
+      if (!modules.isEmpty) {
+
+        val newConfig =
+          configForModules(config, modules) merge (("keepBuildDir", true) ~ ("optimize" -> "none"))
+
+        val res = build(newConfig)
+        Sync.writeInfo(cacheFile, res, currentInfo)(FileInfo.lastModified.format)
+        res
+      } else {
+
+        val files = changedFiles.map(_ relativeTo source)
+        files.foreach{file =>
+          logger.info("Copying asset: " + file)
+          Sync.copy(source / file, target / file)
+        }
+        Sync.writeInfo(cacheFile, previousRelation, currentInfo)(FileInfo.lastModified.format)
+        Relation.empty[File, File]
+      }
+
+    } else {
+
+      logger.info("Rebuilding everything")
+
+      val res = build(config ~ ("keepBuildDir" -> false))
+      Sync.writeInfo(cacheFile, res, currentInfo)(FileInfo.lastModified.format)
+      res
+    }
+
   }
 
   def configForModules(config: Config, moduleIds: Set[String]): Config = {

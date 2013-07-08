@@ -1,4 +1,5 @@
 ({
     name: "main",
-    out: "main-min.js"
+    out: "main-min.js",
+    optimize: "none"
 })

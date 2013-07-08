@@ -54,7 +54,7 @@ class RequireJsEngine {
   }
 
   /**
-   * The compiled optimizer script. Some modifications were made to source of r.js:
+   * The compiled optimizer script. Some modifications were made to the source of r.js:
    * - always throw an exception when failing, instead of throwing only if the logLevel is set to silent.
    * - use a logger present in the scope instead of indiscriminately calling print() for all levels.
    * - use the engine passed in the scope instead of loading a rhino engine.
@@ -87,7 +87,7 @@ class RequireJsEngine {
   }
 
   /**
-   * Call r.js with a list of arguments. Arguments are the same as when using r.js on the command-line.
+   * Call r.js with a list of arguments. Expected arguments are the same as when using r.js on the command-line.
    * @param args arguments to pass to r.js
    */
   def build(args: Array[String]) {
