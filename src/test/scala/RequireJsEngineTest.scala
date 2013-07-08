@@ -7,14 +7,14 @@ class RequireJsEngineTest extends FunSpec with UseCases {
 
   describe("A RequireJsEngine") {
 
-    val engine = new RequireJsEngine()
+    val engine = new RequireJsEngine
 
     it("should run r.js with no arguments without exception") {
-      engine.build(Array.empty[String])
+      engine.run(Array.empty)
     }
 
     it("should throw an exception if r.js throws an exception") {
-      intercept[Exception](engine.build(Array("-o", "404")))
+      intercept[Exception](engine.run(Array("-o", "404")))
     }
 
     it("should build a project given a valid build file") {

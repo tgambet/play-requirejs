@@ -179,7 +179,7 @@ class RequireJsCompilerTest extends FunSpec with UseCases {
             (source / "app" / "admin.js"    -> target / "back.js")
           ))
 
-          assert(compiler.build(Set("front")).all.toSet === Set(
+          assert(compiler.buildModules(Set("front")).all.toSet === Set(
             (source / "front.js"            -> target / "front.js"),
             (source / "app" / "app.js"      -> target / "front.js"),
             (source / "lib" / "backbone.js" -> target / "front.js")
@@ -188,7 +188,7 @@ class RequireJsCompilerTest extends FunSpec with UseCases {
           // remove module config from build.js
           IO.write(sources / "build.js", "({})")
 
-          assert(compiler.build(Set("front")).all.toSet === Set(
+          assert(compiler.buildModules(Set("front")).all.toSet === Set(
             (source / "front.js"            -> target / "front.js"),
             (source / "app" / "app.js"      -> target / "front.js"),
             (source / "lib" / "backbone.js" -> target / "front.js")
@@ -198,7 +198,7 @@ class RequireJsCompilerTest extends FunSpec with UseCases {
           IO.write(sources / "build.js",
             """({ modules: [{ name: 'front', include: ['lib/jquery'] }] })""")
 
-          assert(compiler.build(Set("front")).all.toSet === Set(
+          assert(compiler.buildModules(Set("front")).all.toSet === Set(
             (source / "front.js"            -> target / "front.js"),
             (source / "app" / "app.js"      -> target / "front.js"),
             (source / "lib" / "backbone.js" -> target / "front.js"),
@@ -262,13 +262,6 @@ class RequireJsCompilerTest extends FunSpec with UseCases {
 
         it("shouldn't compile anything if no dependencies have changed") {
 
-          /*        import FileFilter._
-
-          val previousInfo: Map[File, ModifiedFileInfo] = {
-            val assets = ((PathFinder(target) ** "*") filter (_.isFile))
-            assets.get.map(f => f.getAbsoluteFile -> FileInfo.lastModified(f)).toMap
-          }*/
-
           assert {
             compiler.devBuild(cache).all.toSet === Set()
           }
@@ -282,18 +275,6 @@ class RequireJsCompilerTest extends FunSpec with UseCases {
           assert {
             compiler.devBuild(cache).all.toSet === Set()
           }
-
-          /*        val currentInfo: Map[File, ModifiedFileInfo] = {
-
-            val assets = ((PathFinder(target) ** "*") filter (_.isFile))
-            assets.get.map(f => f.getAbsoluteFile -> FileInfo.lastModified(f)).toMap
-          }*/
-
-          /*        val changedFiles: Seq[File] =
-            currentInfo.filter(e => !previousInfo.get(e._1).isDefined || previousInfo(e._1).lastModified < e._2.lastModified).map(_._1).toSeq ++
-            previousInfo.filter(e => !currentInfo.get(e._1).isDefined).map(_._1).toSeq
-
-          println(changedFiles)*/
 
         }
 

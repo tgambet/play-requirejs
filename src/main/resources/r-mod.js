@@ -1,3 +1,10 @@
+
+
+// TODO Update to 2.1.7
+
+
+
+
 /**
  * @license r.js 2.0.4+ Tue, 17 Jul 2012 23:55:16 GMT Copyright (c) 2010-2012, The Dojo Foundation All Rights Reserved.
  * Available via the MIT or new BSD license.
@@ -3245,28 +3252,28 @@ define('logger', ['env!env/print'], function (print) {
 
         trace: function (message) {
             if (this.level <= this.TRACE) {
-                if (jlogger && jlogger.trace) jlogger.trace(message);
+                if (jLogger && jLogger.trace) jLogger.trace(message);
                 else this._print(message);
             }
         },
 
         info: function (message) {
             if (this.level <= this.INFO) {
-                if (jlogger && jlogger.info) jlogger.info(message);
+                if (jLogger && jLogger.info) jLogger.info(message);
                 else this._print(message);
             }
         },
 
         warn: function (message) {
             if (this.level <= this.WARN) {
-                if (jlogger && jlogger.warn) jlogger.warn(message);
+                if (jLogger && jLogger.warn) jLogger.warn(message);
                 else this._print(message);
             }
         },
 
         error: function (message) {
             if (this.level <= this.ERROR) {
-                if (jlogger && jlogger.error) jlogger.error(message);
+                if (jLogger && jLogger.error) jLogger.error(message);
                 else this._print(message);
             }
         },

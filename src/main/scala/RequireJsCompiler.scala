@@ -5,12 +5,12 @@ import org.json4s.JsonAST.JValue
 import java.io.File
 import sbt.IO
 import sbt.Relation
+import sbt.Logger
 import sbt.ModifiedFileInfo
 import sbt.FileFilter
 import sbt.FileInfo
 import sbt.Sync
 import sbt.PathFinder
-import org.slf4j.{LoggerFactory, Logger}
 import scala.util.matching.Regex
 
 import org.json4s.JsonDSL._
@@ -18,8 +18,6 @@ import org.json4s.native.JsonMethods._
 import FileImplicits._
 
 object RequireJsCompiler {
-
-  val logger = LoggerFactory.getLogger(classOf[RequireJsCompiler])
 
   type Config = JObject
 
@@ -118,20 +116,22 @@ class RequireJsCompiler(
    val source: File,
    val target: File,
    val buildFile: File,
-   val buildDir: File) extends RequireJsEngine {
+   val buildDir: File) {
 
   import RequireJsCompiler._
 
   if (target isChildOf source)
     throw new RequireJsException("Failed to create a compiler: the target directory (" + target + ") cannot be a child of the source directory (" + source + ")")
 
-  //if buildFile ! exists warn
+  val engine = new RequireJsEngine
 
-  def build(): Relation[File, File] = build(load(buildFile))
+  def build(logger: Logger = SystemLogger): Relation[File, File] =
+    buildConfig(load(buildFile), logger)
 
-  def build(moduleIds: Set[String]): Relation[File, File] = build(configForModules(load(buildFile), moduleIds))
+  def buildModules(moduleIds: Set[String], logger: Logger = SystemLogger): Relation[File, File] =
+    buildConfig(configForModules(load(buildFile), moduleIds), logger)
 
-  def build(config: Config): Relation[File, File] = {
+  def buildConfig(config: Config, logger: Logger): Relation[File, File] = {
 
     logger.info("Build started")
     logger.debug("- Source directory: " + source.toPath)
@@ -158,20 +158,18 @@ class RequireJsCompiler(
 
     IO.write(newBuild, pretty(render(newJson)))
 
-    //if (logger.isDebugEnabled){
-      logger.trace(IO.read(newBuild)) //.split("\n").foreach(logger.debug)
-    //}
+    logger.debug(IO.read(newBuild))
 
-    build(newBuild)
+    engine.build(newBuild, logger)
 
     val report = target / "build.txt"
 
     parseReport(report, source, target)
   }
 
-  def devBuild(cacheFile: File): Relation[File, File] = devBuild(load(buildFile), cacheFile)
+  def devBuild(cacheFile: File, logger: Logger = SystemLogger): Relation[File, File] = {
 
-  def devBuild(config: Config, cacheFile: File): Relation[File, File] = {
+    val config = load(buildFile)
 
     val currentInfo: Map[File, ModifiedFileInfo] = {
       import FileFilter._
@@ -198,7 +196,7 @@ class RequireJsCompiler(
         val newConfig =
           configForModules(config, modules) merge (("keepBuildDir", true) ~ ("optimize" -> "none"))
 
-        val res = build(newConfig)
+        val res = buildConfig(newConfig, logger)
         Sync.writeInfo(cacheFile, res, currentInfo)(FileInfo.lastModified.format)
         res
       } else {
@@ -216,14 +214,14 @@ class RequireJsCompiler(
 
       logger.info("Rebuilding everything")
 
-      val res = build(config ~ ("keepBuildDir" -> false))
+      val res = buildConfig(config ~ ("keepBuildDir" -> false), logger)
       Sync.writeInfo(cacheFile, res, currentInfo)(FileInfo.lastModified.format)
       res
     }
 
   }
 
-  def configForModules(config: Config, moduleIds: Set[String]): Config = {
+  private def configForModules(config: Config, moduleIds: Set[String]): Config = {
 
     def obj(o: (String, JValue)): JObject = JObject() ~ o
 

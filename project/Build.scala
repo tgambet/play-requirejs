@@ -24,9 +24,7 @@ object PluginBuild extends Build {
       "org.scalatest" %% "scalatest" % "2.0.M5b" % "test",
       "org.json4s" %% "json4s-native" % "3.2.4",
       //"play" %% "play-json" % "2.2-SNAPSHOT", // need scala 2.10, hence sbt 0.13
-      "com.google.protobuf" % "protobuf-java" % "2.5.0",
-      "org.slf4j" % "slf4j-api" % "1.7.5",
-      "ch.qos.logback" % "logback-classic" % "1.0.13" % "test"
+      "com.google.protobuf" % "protobuf-java" % "2.5.0"
     ),
     scalacOptions ++= Seq("-deprecation", "-unchecked")
   )// ++ addSbtPlugin("play" % "sbt-plugin" % "2.1.0")

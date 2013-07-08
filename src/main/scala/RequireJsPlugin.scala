@@ -36,7 +36,7 @@ object RequireJsPlugin extends Plugin {
 
   lazy val requireBuildTask: Project.Initialize[Task[Seq[File]]] =
     (compiler, targetDir, cacheFile, streams) map { (compiler, targetDir, cacheFile, s) =>
-      compiler.devBuild(cacheFile)
+      compiler.devBuild(cacheFile, s.log)
       // return all created files directly. compiler.build()._2.toSeq should be equivalent.
       (targetDir ** "*").get
     }
