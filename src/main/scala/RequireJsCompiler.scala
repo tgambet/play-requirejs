@@ -116,22 +116,20 @@ class RequireJsCompiler(
    val source: File,
    val target: File,
    val buildFile: File,
-   val buildDir: File) {
+   val buildDir: File,
+   val engine: RequireJsEngine = new RequireJsEngine,
+   val logger: Logger = SystemLogger) {
 
   import RequireJsCompiler._
 
   if (target isChildOf source)
     throw new RequireJsException("Failed to create a compiler: the target directory (" + target + ") cannot be a child of the source directory (" + source + ")")
 
-  val engine = new RequireJsEngine
+  def build(): Relation[File, File] = buildConfig(load(buildFile))
 
-  def build(logger: Logger = SystemLogger): Relation[File, File] =
-    buildConfig(load(buildFile), logger)
+  def buildModules(moduleIds: Set[String]): Relation[File, File] = buildConfig(configForModules(load(buildFile), moduleIds))
 
-  def buildModules(moduleIds: Set[String], logger: Logger = SystemLogger): Relation[File, File] =
-    buildConfig(configForModules(load(buildFile), moduleIds), logger)
-
-  def buildConfig(config: Config, logger: Logger): Relation[File, File] = {
+  def buildConfig(config: Config): Relation[File, File] = {
 
     logger.info("Build started")
     logger.debug("- Source directory: " + source.toPath)
@@ -167,7 +165,7 @@ class RequireJsCompiler(
     parseReport(report, source, target)
   }
 
-  def devBuild(cacheFile: File, logger: Logger = SystemLogger): Relation[File, File] = {
+  def devBuild(cacheFile: File): Relation[File, File] = {
 
     val config = load(buildFile)
 
@@ -196,7 +194,7 @@ class RequireJsCompiler(
         val newConfig =
           configForModules(config, modules) merge (("keepBuildDir", true) ~ ("optimize" -> "none"))
 
-        val res = buildConfig(newConfig, logger)
+        val res = buildConfig(newConfig)
         Sync.writeInfo(cacheFile, res, currentInfo)(FileInfo.lastModified.format)
         res
       } else {
@@ -214,7 +212,7 @@ class RequireJsCompiler(
 
       logger.info("Rebuilding everything")
 
-      val res = buildConfig(config ~ ("keepBuildDir" -> false), logger)
+      val res = buildConfig(config ~ ("keepBuildDir" -> false))
       Sync.writeInfo(cacheFile, res, currentInfo)(FileInfo.lastModified.format)
       res
     }

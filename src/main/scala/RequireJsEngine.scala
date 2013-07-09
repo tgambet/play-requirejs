@@ -15,7 +15,8 @@ class RequireJsEngine {
 
   /**
    * A javax.script.ScriptEngine configured to be compatible with r.js. Specifically it completes the global scope with
-   * methods that are expected by r.js when running in a Rhino shell, but do not exist when running through a ScriptEngine.
+   * methods that are expected by r.js when running in a Rhino shell. It also references itself as the global "engine"
+   * variable for use by r.js.
    */
   val engine: ScriptEngine = {
     val engine = new ScriptEngineManager().getEngineByName("JavaScript")
@@ -40,7 +41,7 @@ class RequireJsEngine {
 
   /**
    * The compiled optimizer script. Some modifications were made to the source of r.js:
-   * - always throw an exception when failing, instead of throwing only if the logLevel is set to silent.
+   * - wait for the build promise to complete and throw an exception if failed. By default it only logs on the console.
    * - use a logger present in the scope instead of indiscriminately calling print() for all levels.
    * - use the engine passed in the scope instead of loading a rhino engine.
    */
@@ -60,11 +61,14 @@ class RequireJsEngine {
         |};
       """.stripMargin.replaceAll("<name>", "engineFix").replaceAll("\n"," ")
 
-    val stream = this.getClass.getClassLoader.getResource("r-mod.js").openConnection().getInputStream()
+    // Converts the arguments parameter from an Array[Object] to an Array[String].
+    val toStringArray = "var r = []; for (i in arguments) { r.push(String(arguments[i])); } arguments = r; delete r;"
+
+    val stream = this.getClass.getClassLoader.getResource("r-2.1.8.js").openConnection().getInputStream()
     val rjs = IO.readStream(stream)
 
     engine match {
-      case engine: Compilable => engine.compile(addMethodsToScope + rjs)
+      case engine: Compilable => engine.compile(addMethodsToScope + toStringArray + rjs)
       case _ => sys.error("Engine is not a Compilable")
     }
   }

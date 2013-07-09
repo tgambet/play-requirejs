@@ -62,10 +62,11 @@ var requirejs, require, define, xpcUtil;
         }
 
         //Set up execution context.
-        rhinoContext = Packages.org.mozilla.javascript.ContextFactory.getGlobal().enterContext();
+        //rhinoContext = Packages.org.mozilla.javascript.ContextFactory.getGlobal().enterContext();
 
         exec = function (string, name) {
-            return rhinoContext.evaluateString(this, string, name, 0, null);
+            //return rhinoContext.evaluateString(this, string, name, 0, null);
+            return engine.eval(string);
         };
 
         exists = function (fileName) {
@@ -4376,25 +4377,29 @@ define('logger', ['env!env/print'], function (print) {
 
         trace: function (message) {
             if (this.level <= this.TRACE) {
-                this._print(message);
+                //this._print(message);
+                jLogger.trace(message);
             }
         },
 
         info: function (message) {
             if (this.level <= this.INFO) {
-                this._print(message);
+                //this._print(message);
+                jLogger.info(message);
             }
         },
 
         warn: function (message) {
             if (this.level <= this.WARN) {
-                this._print(message);
+                //this._print(message);
+                jLogger.warn(message);
             }
         },
 
         error: function (message) {
             if (this.level <= this.ERROR) {
-                this._print(message);
+                //this._print(message);
+                jLogger.error(message);
             }
         },
 
@@ -25707,7 +25712,8 @@ function (args, quit, logger, build) {
     build(args).then(function () {}, function (err) {
         logger.error(err);
         quit(1);
-    });
+        throw err;
+    }).end();
 });
 
 

@@ -11,6 +11,7 @@ class RequireJsEngineTest extends FunSpec with UseCases {
 
     it("should run r.js with no arguments without exception") {
       engine.run(Array.empty)
+      engine.run(Array("-v"))
     }
 
     it("should throw an exception if r.js throws an exception") {
