@@ -41,7 +41,7 @@ object RequireJsCompiler {
       val content = IO.read(file)
       parse(if (file.getName.endsWith(".js")) jsonify(content) else content).asInstanceOf[JObject]
     } catch {
-      case e: Exception => throw new RequireJsException("Error loading buildFile: " + file, e)
+      case e: Exception => throw new RequireJsException("Error loading buildFile: " + file + " (" + e.getMessage + ")", e)
     }
 
   }
@@ -137,7 +137,7 @@ class RequireJsCompiler(
     logger.debug("- Build file path: " + buildFile.toPath)
     logger.debug("- Build directory: " + buildDir)
 
-    val newBuild = buildDir / ".build-require.js"
+    val newBuild = buildDir / ".build.tmp.js"
 
     val newJson = {
 
@@ -162,7 +162,12 @@ class RequireJsCompiler(
 
     val report = target / "build.txt"
 
-    parseReport(report, source, target)
+    val r = parseReport(report, source, target)
+
+    IO.delete(newBuild)
+    IO.delete(report)
+
+    r
   }
 
   def devBuild(cacheFile: File): Relation[File, File] = {

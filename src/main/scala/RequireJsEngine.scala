@@ -74,7 +74,7 @@ class RequireJsEngine {
   }
 
   /**
-   * Runs r.js compiler with a list of arguments. Expected arguments are the same as when using r.js on the command-line.
+   * Runs r.js compiler with the specified command-line arguments.
    * @param args arguments to pass to r.js
    */
   def run(args: Array[String], logger: Logger = SystemLogger) {
@@ -99,8 +99,10 @@ class RequireJsEngine {
     rjs.eval(bindings)
   }
 
+  def run(args: String*) { run(args.toArray) }
+
   /**
-   * Call r.js only passing a build file. Equivalent to calling build(Array("-o", buildFile.toString)).
+   * Call r.js only passing a build file. Equivalent to calling run("-o", buildFile.toString).
    * @param buildFile a require.js build file
    */
   def build(buildFile: File, logger: Logger = SystemLogger) { run(Array("-o", buildFile.toString), logger) }

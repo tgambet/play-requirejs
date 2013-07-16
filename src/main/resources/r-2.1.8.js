@@ -25099,7 +25099,7 @@ define('build', function (require) {
         //config clone it works out.
         require(lang.mixin({}, baseConfig, true));
 
-        logger.trace("\nTracing dependencies for: " + (module.name || module.out));
+        logger.info("Tracing dependencies for: " + (module.name || module.out));
         include = module.name && !module.create ? [module.name] : [];
         if (module.include) {
             include = include.concat(module.include);
