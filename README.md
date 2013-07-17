@@ -4,9 +4,28 @@ play-requirejs
 [Require.js][require] optimizer plugin for [sbt][sbt]. Initially meant as a [Play][play] plugin but it is not
 required to use it.
 
-## Use with sbt
+## Sbt command
 
-...
+The plugin defines a single command named `rjs`.
+
+    $ rjs
+    [info] See https://github.com/jrburke/r.js for usage.
+
+    $ rjs -v
+    [info] r.js: 2.1.8, RequireJS: 2.1.8, UglifyJS2: 2.3.6, UglifyJS: 1.3.4
+
+    $ rjs -o build.js
+    [info] Tracing dependencies for: main
+    [info]
+    [info] main.js
+    [info] ----------------
+    [info] lib/jquery.js
+    [info] main.js
+
+    $ rjs -o 404.js
+    [error] Error: Error: ERROR: build file does not exist: ~/project/404.js
+    [error] javax.script.ScriptException: Error: Error: ERROR: build file does not exist: ~/project/404.js in <Unknown Source> at line number 2918
+    [error] Use 'last' for the full log.
 
 ## Use with Play
 

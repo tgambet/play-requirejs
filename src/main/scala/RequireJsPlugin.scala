@@ -43,6 +43,15 @@ object RequireJsPlugin extends Plugin {
 
   lazy val requireClearTask = (cacheFile) map { IO.delete(_) }
 
+  lazy val rjs: Command = Command.args("rjs", "<arg>")((s, args) => {
+    requireJsEngine.run(args.toArray, s.globalLogging.full)
+    s
+  })
+
+  override def settings = Seq(
+    commands += rjs
+  )
+
   lazy val requireBaseSettings = Seq (
     baseDir   <<= baseDirectory,
     buildFile <<= baseDirectory(_ / "project" / "build.js"),
