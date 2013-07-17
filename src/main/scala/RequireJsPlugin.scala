@@ -12,7 +12,7 @@ object RequireJsPlugin extends Plugin {
     val cacheFile  = SettingKey[File]("requirejs-cache-file")
     val baseDir    = SettingKey[File]("requirejs-base-dir")
     val buildTask  = TaskKey[Seq[File]]("requirejs-build")
-    val clearTask  = TaskKey[Unit]("requirejs-clear")
+    val cleanTask  = TaskKey[Unit]("requirejs-clean")
   }
 
   import RequireJS._
@@ -41,7 +41,7 @@ object RequireJsPlugin extends Plugin {
       (targetDir ** "*").get
     }
 
-  lazy val requireClearTask = (cacheFile) map { IO.delete(_) }
+  lazy val requireCleanTask = (cacheFile) map { IO.delete(_) }
 
   lazy val rjs: Command = Command.args("rjs", "<arg>")((s, args) => {
     requireJsEngine.run(args.toArray, s.globalLogging.full)
@@ -57,7 +57,7 @@ object RequireJsPlugin extends Plugin {
     buildFile <<= baseDirectory(_ / "project" / "build.js"),
     cacheFile <<= cacheDirectory(_ / "requirejs"),
     buildTask <<= requireBuildTask,
-    clearTask <<= requireClearTask,
+    cleanTask <<= requireCleanTask,
     resourceGenerators in Compile <+= requireBuildTask
 
     /*resourceGenerators in Compile <+= requireResourceGenerator,

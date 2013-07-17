@@ -164,7 +164,6 @@ class RequireJsCompiler(
 
     val r = parseReport(report, source, target)
 
-    IO.delete(newBuild)
     IO.delete(report)
 
     r
@@ -217,7 +216,7 @@ class RequireJsCompiler(
 
       logger.info("Rebuilding everything")
 
-      val res = buildConfig(config ~ ("keepBuildDir" -> false))
+      val res = buildConfig(config merge (("keepBuildDir" -> false) ~ ("optimize" -> "none")))
       Sync.writeInfo(cacheFile, res, currentInfo)(FileInfo.lastModified.format)
       res
     }
