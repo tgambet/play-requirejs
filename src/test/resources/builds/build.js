@@ -10,7 +10,8 @@
     paths: {
         "foo.bar": "../scripts/foo/bar",
         "baz": "../another/path/baz" /*,
-        "bar": "../to/bar" */
+        "bar": "../to/bar" */,
+        empty: "empty:"
     },
     modules: [{ name: "module1" }, { name: "module2", include: ["lib/dep1"] }],
     keepBuildDir: true,

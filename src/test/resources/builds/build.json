@@ -5,7 +5,8 @@
     "mainConfigFile": "../some/path/to/main.js",
     "paths": {
         "foo.bar": "../scripts/foo/bar",
-        "baz": "../another/path/baz"
+        "baz": "../another/path/baz",
+        "empty": "empty:"
     },
     "modules": [{ "name": "module1" }, { "name": "module2", "include": ["lib/dep1"] }],
     "keepBuildDir": true,

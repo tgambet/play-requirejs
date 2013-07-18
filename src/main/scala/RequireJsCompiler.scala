@@ -25,12 +25,12 @@ object RequireJsCompiler {
 
     def jsonify(jsContent: String): String = {
       val replacements: Seq[(Regex, String)] = Seq(
-        ("""(?s)(/\*.*?\*/)""".r -> ""),    // remove multi-line comments
-        ("""(//.*)""".r -> ""),             // remove single-line comments
-        ("""(?m)^\s*\n""".r -> ""),         // remove empty lines
-        ("""'""".r -> "\""),                // single to double quotes
-        ("""(\w+):""".r -> "\"$1\":"),      // quote unquoted keys
-        ("""(?s)\A\((.*)\)\z""".r -> "$1")  // remove wrapping parenthesis
+        ("""(?s)(/\*.*?\*/)""".r -> ""),        // remove multi-line comments
+        ("""(//.*)""".r -> ""),                 // remove single-line comments
+        ("""(?m)^\s*\n""".r -> ""),             // remove empty lines
+        ("""'""".r -> "\""),                    // single to double quotes
+        ("""[,\{\s^](\w+):""".r -> "\"$1\":"), // quote unquoted keys
+        ("""(?s)\A\((.*)\)\z""".r -> "$1")      // remove wrapping parenthesis
       )
       replacements.foldLeft(jsContent){ case (content, (regex, replace)) =>
         regex.replaceAllIn(content.trim, replace)
