@@ -8,6 +8,7 @@ import sbt.Relation
 import sbt.Logger
 import sbt.ModifiedFileInfo
 import sbt.FileFilter
+import FileFilter._
 import sbt.FileInfo
 import sbt.Sync
 import sbt.PathFinder
@@ -131,7 +132,8 @@ class RequireJsCompiler(
 
   def buildConfig(config: Config): Relation[File, File] = {
 
-    logger.info("Build started")
+    logger.info("Compiling " + ((PathFinder(source) ** "*") filter (_.isFile)).get.size + " JavaScript sources to " + target.toPath.toAbsolutePath)
+
     logger.debug("- Source directory: " + source.toPath)
     logger.debug("- Target directory: " + target.toPath)
     logger.debug("- Build file path: " + buildFile.toPath)
@@ -174,7 +176,7 @@ class RequireJsCompiler(
     val config = load(buildFile)
 
     val currentInfo: Map[File, ModifiedFileInfo] = {
-      import FileFilter._
+
       val assets = ((PathFinder(source) ** "*") filter (_.isFile)) +++ buildFile
       assets.get.map(f => f.getAbsoluteFile -> FileInfo.lastModified(f)).toMap
     }
@@ -196,7 +198,7 @@ class RequireJsCompiler(
       if (!modules.isEmpty) {
 
         val newConfig =
-          configForModules(config, modules) merge (("keepBuildDir", true) ~ ("optimize" -> "none"))
+          configForModules(config, modules) ~ ("keepBuildDir" -> true)
 
         val res = buildConfig(newConfig)
         Sync.writeInfo(cacheFile, res, currentInfo)(FileInfo.lastModified.format)
@@ -214,9 +216,7 @@ class RequireJsCompiler(
 
     } else {
 
-      logger.info("Rebuilding everything")
-
-      val res = buildConfig(config merge (("keepBuildDir" -> false) ~ ("optimize" -> "none")))
+      val res = buildConfig(config ~ ("keepBuildDir" -> false))
       Sync.writeInfo(cacheFile, res, currentInfo)(FileInfo.lastModified.format)
       res
     }
