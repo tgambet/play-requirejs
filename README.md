@@ -3,7 +3,7 @@ play-requirejs
 
 **/!\ Do not use. Prefer [sbt-web][sbt-web] and [sbt-rjs][sbt-rjs] if you are looking for the same functionality.**
 
-The motivation of this project was to workaround the shortcomings of Play's (< 2.3) implementation of RequireJS, mainly that it didn't cacth JavaScript exceptions and only exposed a limited subset of [r.js build file][build.js] functionalities. Those issues have been solved (or are being solved) by [sbt-rjs][sbt-rjs] which is used by Play 2.3 and is likely to be maintained; this project isn't. 
+The goal of this project was to workaround the shortcomings of Play's (< 2.3) implementation of RequireJS, mainly that it didn't cacth JavaScript exceptions and only exposed a limited subset of [r.js build file][build.js] functionalities. Those issues have been solved (or are being solved) by [sbt-rjs][sbt-rjs] which is used by Play 2.3 and is likely to be maintained; this project isn't. 
 
 Original Documentation
 =========
