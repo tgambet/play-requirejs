@@ -1,8 +1,14 @@
 play-requirejs
 =========
 
-[Require.js][require] optimizer plugin for [sbt][sbt]. Initially meant as a [Play][play] plugin but it is not
-required to use it.
+**/!\ Do not use. Prefer [sbt-web][sbt-web] and [sbt-rjs][sbt-rjs] if you are looking for the same functionality.**
+
+The motivation of this project was to workaround the shortcomings of Play's (< 2.3) implementation of RequireJS, mainly that it didn't cacth JavaScript exceptions and only exposed a limited subset of [r.js build file][build.js] functionalities. Those issues have been solved (or are being solved) by [sbt-rjs][sbt-rjs] which is used by Play 2.3 and is likely to be maintained; this project isn't. 
+
+Original Documentation
+=========
+
+[Require.js][require] optimizer plugin for [sbt][sbt].
 
 ## Sbt command
 
@@ -26,10 +32,6 @@ The plugin defines a single command named `rjs`.
     [error] Error: Error: ERROR: build file does not exist: ~/project/404.js
     [error] javax.script.ScriptException: Error: Error: ERROR: build file does not exist: ~/project/404.js in <Unknown Source> at line number 2918
     [error] Use 'last' for the full log.
-
-## Use with Play
-
-...
 
 ## API
 
@@ -90,3 +92,6 @@ To build the project use one of the `build`, `buildModules`, `buildConfig`, and 
 [require]: http://requirejs.org/
 [play]: http://www.playframework.org/
 [sbt]: https://github.com/harrah/xsbt
+[sbt-rjs]: https://github.com/sbt/sbt-rjs#sbt-rjs
+[sbt-web]: https://github.com/sbt/sbt-web#sbt-web
+[build.js]: https://github.com/jrburke/r.js/blob/master/build/example.build.js
